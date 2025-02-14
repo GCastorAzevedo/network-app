@@ -1,0 +1,9 @@
+services:
+  graph-db:
+    image: neo4j:2025.01.0-community-bullseye
+    ports:
+      - 7474:7474
+      - 7687:7687
+    restart: always
+    environment:
+      NEO4J_AUTH: neo4j/neo4jpass

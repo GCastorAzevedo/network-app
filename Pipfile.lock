@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6b1a72e0d668d06c09e857e4f2de8524f188ddf283d95f9a7fef3a8cbec40ae7"
+            "sha256": "90413ceaf7d6e8b751d196aeb102d40975d4e01f2cf6dee58eb7792502c3f2ce"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -49,6 +49,24 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==3.10"
+        },
+        "neo4j": {
+            "hashes": [
+                "sha256:929c14b9e5341267324eca170b39d1798b032bffacc26a0529eacaf678ae483f",
+                "sha256:f82ee807cd15b178898d83f41a66372e11719a25dd487fd7bea48fd4b7323765"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7'",
+            "version": "==5.27.0"
+        },
+        "neomodel": {
+            "hashes": [
+                "sha256:a482cbc755ecc6c1efb8c3651f69f0e36e1bef87a7065e9d40fbf8d5fa984862",
+                "sha256:a72f9346592ff2696fb6f8621830e3e42d3c5ddf258ec6da1cef406a573133ea"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==5.4.3"
         },
         "pydantic": {
             "hashes": [
@@ -163,6 +181,13 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==2.27.2"
+        },
+        "pytz": {
+            "hashes": [
+                "sha256:89dd22dca55b46eac6eda23b2d72721bf1bdfef212645d81513ef5d03038de57",
+                "sha256:c2db42be2a2518b28e65f9207c4d05e6ff547d1efa4086469ef855e4ab70178e"
+            ],
+            "version": "==2025.1"
         },
         "sniffio": {
             "hashes": [
