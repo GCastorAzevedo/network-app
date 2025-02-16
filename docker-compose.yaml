@@ -19,5 +19,31 @@ services:
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
 
+  supply-chain-api:
+    image: supply-chain-app:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - supply-chain-db
+    env_file:
+      - .env
+    volumes:
+      - type: bind
+        source: ./supply_chain_api
+        target: /app/supply_chain_api
+        read_only: true
+      - type: bind
+        source: ./common
+        target: /app/common
+        read_only: true
+    build:
+      context: ./
+      dockerfile: supply_chain_api/Dockerfile
+    entrypoint: >
+      /bin/bash -c "
+      set -e ;
+      fastapi run supply_chain_api/main.py --host 0.0.0.0 --port 80 --reload
+      "
+
 volumes:
   app-db-data:
