@@ -7,6 +7,9 @@ name = "pypi"
 fastapi = "*"
 neo4j = "*"
 neomodel = "*"
+alembic = "*"
+alchemy = ">=2.0.38"
+psycopg2 = "*"
 
 [dev-packages]
 black = "*"
