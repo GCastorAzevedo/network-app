@@ -1,5 +1,5 @@
 services:
-  graph-db:
+  neo4j-db:
     image: neo4j:2025.01.0-community-bullseye
     ports:
       - 7474:7474
@@ -7,3 +7,12 @@ services:
     restart: always
     environment:
       NEO4J_AUTH: neo4j/neo4jpass
+
+  supply-chain-db:
+    image: apache/age:release_PG16_1.5.0
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
