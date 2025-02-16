@@ -8,8 +8,9 @@ fastapi = "*"
 neo4j = "*"
 neomodel = "*"
 alembic = "*"
-alchemy = ">=2.0.38"
-psycopg2 = "*"
+sqlalchemy = "*"
+psycopg2-binary = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 black = "*"
