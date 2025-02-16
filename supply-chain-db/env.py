@@ -1,3 +1,4 @@
+import os
 import random
 import string
 
@@ -28,6 +29,24 @@ target_metadata = None
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+
+ALEMBIC_USERNAME = os.getenv("ALEMBIC_USERNAME")
+ALEMBIC_PASSWORD = os.getenv("ALEMBIC_PASSWORD")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+
+if None in [ALEMBIC_USERNAME, ALEMBIC_PASSWORD, DATABASE_NAME]:
+    raise ValueError(
+        "ALEMBIC_USERNAME, ALEMBIC_PASSWORD, and ALEMBIC_DATABASE_NAME must be set"
+    )
+
+HOSTNAME = os.getenv("HOSTNAME") or "localhost"
+PORT = os.getenv("PORT") or "5432"
+
+DATABASE_URI = (
+    os.getenv("S2_DATABASE_URI")
+    or f"postgresql://{ALEMBIC_USERNAME}:{ALEMBIC_PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE_NAME}"
+)
 
 
 def process_revision_directives(context, _, directives):
@@ -62,6 +81,10 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
+
+    if not url or url.strip() == "":
+        url = DATABASE_URI
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -81,8 +104,12 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    db_config = config.get_section(config.config_ini_section, {})
+    if "sqlalchemy.url" not in db_config or not db_config["sqlalchemy.url"].strip():
+        db_config["sqlalchemy.url"] = DATABASE_URI
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        db_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
