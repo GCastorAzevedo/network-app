@@ -7,3 +7,10 @@ export DATABASE_NAME=postgres
 .PHONY: export
 export:
 	@echo "Environment variables exported."
+
+.PHONY: add_non_superuser_symlink
+add_non_superuser_symlink:
+# https://age.apache.org/age-manual/master/intro/setup.html
+	@echo "Creating symbolic link for AGE extension..."
+	@ln -sf /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/plugins/age.so
+	@echo "Symbolic link created."
