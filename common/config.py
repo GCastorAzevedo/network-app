@@ -3,9 +3,7 @@ from pydantic import PostgresDsn
 
 
 class Settings(BaseSettings):
-    DATABASE_URI: PostgresDsn = PostgresDsn(
-        "postgresql://postgres:postgres@localhost:5432/postgres"
-    )
+    DATABASE_URI: PostgresDsn
 
 
 settings = Settings()  # type: ignore
