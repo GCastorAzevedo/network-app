@@ -11,6 +11,7 @@ alembic = "*"
 sqlalchemy = "*"
 psycopg2-binary = "*"
 psycopg = {extras = ["binary"], version = "*"}
+pydantic-settings = "*"
 
 [dev-packages]
 black = "*"
