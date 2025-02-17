@@ -44,7 +44,7 @@ HOSTNAME = os.getenv("HOSTNAME") or "localhost"
 PORT = os.getenv("PORT") or "5432"
 
 DATABASE_URI = (
-    os.getenv("S2_DATABASE_URI")
+    os.getenv("DATABASE_URI")
     or f"postgresql://{ALEMBIC_USERNAME}:{ALEMBIC_PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE_NAME}"
 )
 

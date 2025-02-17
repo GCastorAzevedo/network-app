@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from sqlalchemy import text
-from supply_chain_db.session import DBSession
+from graph_db.session import DBSession
 
 route = APIRouter()
 

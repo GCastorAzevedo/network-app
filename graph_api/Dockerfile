@@ -9,14 +9,14 @@ COPY Pipfile.lock Pipfile.lock
 
 RUN pipenv install --system --deploy
 
-FROM python-base AS supply-chain-api
+FROM python-base AS whollygraph-api
 
 WORKDIR /app
 
 COPY ./common common
-COPY ./supply_chain_api supply_chain_api
-COPY ./supply_chain_db supply_chain_db
+COPY ./graph_api graph_api
+COPY ./graph_db graph_db
 
-ENV PROJECT_NAME=supply_chain_api
+ENV PROJECT_NAME=whollygraph_api
 
 SHELL [ "/bin/sh", "-c" ]

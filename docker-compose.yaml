@@ -8,7 +8,7 @@ services:
     environment:
       NEO4J_AUTH: neo4j/neo4jpass
 
-  supply-chain-db:
+  graph-db:
     image: apache/age:release_PG16_1.5.0
     ports:
       - 5432:5432
@@ -19,18 +19,18 @@ services:
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
 
-  supply-chain-api:
-    image: supply-chain-app:latest
+  graph-api:
+    image: graph-app:latest
     ports:
       - 8080:80
     depends_on:
-      - supply-chain-db
+      - graph-db
     env_file:
       - .env
     volumes:
       - type: bind
-        source: ./supply_chain_api
-        target: /app/supply_chain_api
+        source: ./graph_api
+        target: /app/graph_api
         read_only: true
       - type: bind
         source: ./common
@@ -38,12 +38,30 @@ services:
         read_only: true
     build:
       context: ./
-      dockerfile: supply_chain_api/Dockerfile
+      dockerfile: graph_api/Dockerfile
     entrypoint: >
       /bin/sh -c "
       set -e ;
-      fastapi run supply_chain_api/main.py --host 0.0.0.0 --port 80 --reload
+      fastapi run graph_api/main.py --host 0.0.0.0 --port 80 --reload
       "
+
+  broker:
+    # https://hub.docker.com/r/apache/kafka
+    image: apache/kafka:latest
+    container_name: broker
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
 
 volumes:
   app-db-data:
