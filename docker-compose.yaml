@@ -22,7 +22,7 @@ services:
   supply-chain-api:
     image: supply-chain-app:latest
     ports:
-      - 8080:8080
+      - 8080:80
     depends_on:
       - supply-chain-db
     env_file:
@@ -40,7 +40,7 @@ services:
       context: ./
       dockerfile: supply_chain_api/Dockerfile
     entrypoint: >
-      /bin/bash -c "
+      /bin/sh -c "
       set -e ;
       fastapi run supply_chain_api/main.py --host 0.0.0.0 --port 80 --reload
       "
