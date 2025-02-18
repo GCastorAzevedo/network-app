@@ -14,3 +14,13 @@ add_non_superuser_symlink:
 	@echo "Creating symbolic link for AGE extension..."
 	@ln -sf /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/plugins/age.so
 	@echo "Symbolic link created."
+
+.PHONY: upgrade_alembic_from_graph_db
+upgrade_alembic_from_graph_db:
+	@echo "Upgrading Alembic..."
+	@PYTHONPATH=../ alembic upgrade head
+	@echo "Alembic upgraded."
+
+.PHONY: run_alembic_from_root
+run_alembic_from_root:
+	@ PYTHONPATH=. alembic -c graph_db/alembic.ini current
