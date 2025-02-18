@@ -12,11 +12,13 @@ psycopg2-binary = "*"
 psycopg = {extras = ["binary"], version = "*"}
 pydantic-settings = "*"
 fastapi = {extras = ["standard"], version = "*"}
+strawberry-graphql = {extras = ["fastapi"], version = "*"}
 
 [dev-packages]
 black = "*"
 ruff = "*"
 unimport = "*"
+strawberry-graphql = {extras = ["debug-server"], version = "*"}
 
 [requires]
 python_version = "3.12"

@@ -38,3 +38,5 @@
 * https://www.elastic.co/elasticsearch/graph
 * https://age.apache.org/
 * https://medium.com/percolation-labs/cloudnativepg-age-and-pg-vector-on-a-docker-image-step-1-ef0156c78f49
+* GRAPHQL:
+    * https://medium.com/simform-engineering/building-a-graphql-api-with-fastapi-and-strawberry-an-exciting-adventure-with-test-driven-aa7ed509f218
