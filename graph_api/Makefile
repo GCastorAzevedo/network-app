@@ -17,7 +17,6 @@ run-docker:
 		graph_api \
 		fastapi run graph_api/main.py --host 0.0.0.0 --port 80 --reload
 
-.PHONY: test
-test:
-	@ pwd && cd .. && pwd && ls
-	@ pwd
+.PHONY: debug-strawberry
+debug-strawberry:
+	@ PYTHONPATH=. strawberry server graph_api.api.v1.graphql.endpoints

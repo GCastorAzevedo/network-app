@@ -10,6 +10,7 @@ services:
 
   graph-db:
     image: apache/age:release_PG16_1.5.0
+    platform: linux/amd64
     ports:
       - 5432:5432
     environment:

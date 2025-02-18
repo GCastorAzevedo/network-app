@@ -1,14 +1,9 @@
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 
+from graph_api.api.v1.graphql.schemas.query import Query
+from graph_api.api.v1.graphql.schemas.mutation import Mutation
 
-@strawberry.type
-class Query:
-    @strawberry.field
-    async def hello(self) -> str:
-        return "Hello World"
-
-
-schema = strawberry.Schema(query=Query)
+schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 graphql_router = GraphQLRouter(schema)

@@ -23,7 +23,7 @@ def upgrade() -> None:
 
     op.execute("LOAD 'age';")
 
-    op.execute('SET search_path = ag_catalog, "$user", public;')
+    op.execute('SET search_path = public, ag_catalog, "$user";')
 
 
 def downgrade() -> None:
