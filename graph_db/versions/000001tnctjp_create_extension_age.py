@@ -1,8 +1,8 @@
 """create extension age
 
-Revision ID: 000001jpzxbi
+Revision ID: 000001tnctjp
 Revises:
-Create Date: 2025-02-16 18:14:52.573287
+Create Date: 2025-02-18 15:09:08.430664
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision: str = "000001jpzxbi"
+revision: str = "000001tnctjp"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
