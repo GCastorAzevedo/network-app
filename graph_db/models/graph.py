@@ -2,7 +2,6 @@ from graph_db.models.base import Base
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from sqlalchemy import DDL
 
 
 class Unit(Base):
@@ -23,12 +22,14 @@ class Document(Base):
     unit = relationship("Unit", back_populates="documents")
 
 
-create_graph_node_function = DDL(
-    "CREATE FUNCTION add_node() RETURNS TRIGGER AS $$ "
-    "BEGIN NEW.data := 'ins'; "
-    "RETURN NEW; "
-    "END; $$ LANGUAGE PLPGSQL"
-)
+# from sqlalchemy import event, DDL
+
+# create_graph_node_function = DDL(
+#     "CREATE FUNCTION add_node() RETURNS TRIGGER AS $$ "
+#     "BEGIN NEW.data := 'ins'; "
+#     "RETURN NEW; "
+#     "END; $$ LANGUAGE PLPGSQL"
+# )
 
 # update_graph_node_function = DDL("CREATE FUNCTION update_node() RETURNS TRIGGER AS $$ ")
 
