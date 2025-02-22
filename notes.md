@@ -40,3 +40,9 @@
 * https://medium.com/percolation-labs/cloudnativepg-age-and-pg-vector-on-a-docker-image-step-1-ef0156c78f49
 * GRAPHQL:
     * https://medium.com/simform-engineering/building-a-graphql-api-with-fastapi-and-strawberry-an-exciting-adventure-with-test-driven-aa7ed509f218
+* Kafka connector:
+    * https://hub.docker.com/r/apache/kafka
+    * https://docs.confluent.io/platform/current/connect/userguide.html#configuring-workers
+    * https://docs.confluent.io/platform/current/installation/docker/config-reference.html#kconnect-long-configuration
+    * https://docs.confluent.io/platform/current/installation/configuration/connect/index.html#kconnect-long-configuration-reference-for-cp
+    * https://kafka.apache.org/documentation/#connectconfigs
