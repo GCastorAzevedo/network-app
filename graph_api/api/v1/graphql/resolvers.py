@@ -13,7 +13,11 @@ async def get_units() -> list[Unit]:
 
 async def add_unit(name: str, description: str) -> Unit:
     session = get_sync_session()
-    sql = insert(graph.Unit).returning(name=name, description=description)
+    sql = (
+        insert(graph.Unit)
+        .values(name=name, description=description)
+        .returning(graph.Unit.id, graph.Unit.name, graph.Unit.description)
+    )
     db_units = session.execute(sql).scalars().unique().all()
     return [Unit(**unit.as_dict()) for unit in db_units][0]
 
