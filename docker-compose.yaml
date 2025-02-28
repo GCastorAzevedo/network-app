@@ -8,23 +8,16 @@ services:
     environment:
       NEO4J_AUTH: neo4j/neo4jpass
 
-  graph-db:
-    image: apache/age:release_PG16_1.5.0
-    platform: linux/amd64
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    volumes:
-      - app-db-data:/var/lib/postgresql/data
+
 
   graph-api:
     image: graph-app:latest
     ports:
       - 8080:80
     depends_on:
+      graph-db:
+        condition: service_healthy
+    links:
       - graph-db
     env_file:
       - .env
@@ -43,8 +36,29 @@ services:
     entrypoint: >
       /bin/sh -c "
       set -e ;
+      . graph_api/scripts/local_prestart.sh &&
       fastapi run graph_api/main.py --host 0.0.0.0 --port 80 --reload
       "
+
+  graph-db:
+    image: apache/age:release_PG16_1.5.0
+    platform: linux/amd64
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 1s
+      retries: 5
+      timeout: 1s
+      start_period: 2s
 
   zookeeper:
     image: quay.io/debezium/zookeeper:latest

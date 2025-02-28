@@ -42,13 +42,10 @@ if None in [ALEMBIC_USERNAME, ALEMBIC_PASSWORD, DATABASE_NAME]:
         "ALEMBIC_USERNAME, ALEMBIC_PASSWORD, and ALEMBIC_DATABASE_NAME must be set"
     )
 
-HOSTNAME = os.getenv("HOSTNAME") or "localhost"
-PORT = os.getenv("PORT") or "5432"
+DATABASE_HOSTNAME = os.getenv("DATABASE_HOSTNAME") or "localhost"
+DATABASE_PORT = os.getenv("DATABASE_PORT") or "5432"
 
-DATABASE_URI = (
-    os.getenv("DATABASE_URI")
-    or f"postgresql://{ALEMBIC_USERNAME}:{ALEMBIC_PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE_NAME}"
-)
+DATABASE_URI = f"postgresql://{ALEMBIC_USERNAME}:{ALEMBIC_PASSWORD}@{DATABASE_HOSTNAME}:{DATABASE_PORT}/{DATABASE_NAME}"
 
 
 def process_revision_directives(context, _, directives):
