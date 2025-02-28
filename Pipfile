@@ -19,6 +19,7 @@ black = "*"
 ruff = "*"
 unimport = "*"
 strawberry-graphql = {extras = ["debug-server"], version = "*"}
+pytest = "*"
 
 [requires]
 python_version = "3.12"

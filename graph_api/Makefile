@@ -19,4 +19,4 @@ run-docker:
 
 .PHONY: debug-strawberry
 debug-strawberry:
-	@ PYTHONPATH=. strawberry server graph_api.api.v1.graphql.endpoints
+	@ PYTHONPATH=.. strawberry server graph_api.api.v1.graphql.endpoints
