@@ -13,7 +13,7 @@ class Unit(Base):
     )
 
     def as_dict(self):
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "description": self.description}
 
 
 class Document(Base):
@@ -27,7 +27,12 @@ class Document(Base):
     unit = relationship("Unit", back_populates="documents")
 
     def as_dict(self):
-        return {"id": self.id, "name": self.name}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "content": self.content,
+        }
 
 
 # from sqlalchemy import event, DDL

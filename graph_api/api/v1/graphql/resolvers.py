@@ -16,7 +16,7 @@ async def add_unit(name: str, description: str) -> Unit:
     sql = (
         insert(graph.Unit)
         .values(name=name, description=description)
-        .returning(graph.Unit.id, graph.Unit.name, graph.Unit.description)
+        .returning(graph.Unit)
     )
     db_units = session.execute(sql).scalars().unique().all()
     return [Unit(**unit.as_dict()) for unit in db_units][0]
@@ -28,7 +28,7 @@ async def update_unit(id: int, name: str, description: str) -> Unit:
         update(graph.Unit)
         .where(graph.Unit.id == id)
         .values(name=name, description=description)
-        .returning(graph.Unit.id, graph.Unit.name, graph.Unit.description)
+        .returning(graph.Unit)
     )
     db_units = session.execute(sql).scalars().unique().all()
     return [Unit(**unit.as_dict()) for unit in db_units][0]
@@ -36,11 +36,7 @@ async def update_unit(id: int, name: str, description: str) -> Unit:
 
 async def delete_unit(id: int) -> Unit:
     session = get_sync_session()
-    sql = (
-        delete(graph.Unit)
-        .where(graph.Unit.id == id)
-        .returning(graph.Unit.id, graph.Unit.name, graph.Unit.description)
-    )
+    sql = delete(graph.Unit).where(graph.Unit.id == id).returning(graph.Unit)
     db_units = session.execute(sql).scalars().unique().all()
     return [Unit(**unit.as_dict()) for unit in db_units][0]
 
