@@ -31,8 +31,8 @@ async def update_unit(id: int, name: str, description: str) -> Unit:
         .values(name=name, description=description)
         .returning(graph.Unit)
     )
-    session.commit()
     db_units = session.execute(sql).scalars().unique().all()
+    session.commit()
     return [Unit(**unit.as_dict()) for unit in db_units][0]
 
 
