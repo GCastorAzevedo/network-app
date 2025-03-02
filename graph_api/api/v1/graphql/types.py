@@ -20,6 +20,7 @@ class Unit:
 @strawberry.type
 class Document:
     id: int
+    unit_id: int
     name: Optional[str] = None
     description: Optional[str] = None
     content: JSON

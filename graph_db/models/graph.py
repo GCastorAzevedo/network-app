@@ -29,6 +29,7 @@ class Document(Base):
     def as_dict(self):
         return {
             "id": self.id,
+            "unit_id": self.unit_id,
             "name": self.name,
             "description": self.description,
             "content": self.content,

@@ -2,6 +2,12 @@ from graph_db.models import graph
 from graph_db.session import get_sync_session
 from sqlalchemy import select, delete, update, insert
 from graph_api.api.v1.graphql.types import Document, Unit
+from graph_api.api.v1.graphql.models import (
+    AddDocumentInput,
+    UpdateDocumentInput,
+    AddUnitInput,
+    UpdateUnitInput,
+)
 
 
 async def get_units() -> list[Unit]:
@@ -11,11 +17,11 @@ async def get_units() -> list[Unit]:
     return [Unit(**unit.as_dict()) for unit in db_units]
 
 
-async def add_unit(name: str, description: str) -> Unit:
+async def add_unit(input: AddUnitInput) -> Unit:
     session = get_sync_session()
     sql = (
         insert(graph.Unit)
-        .values(name=name, description=description)
+        .values(**input.model_dump(exclude_none=True))
         .returning(graph.Unit)
     )
     db_units = session.execute(sql).scalars().unique().all()
@@ -23,12 +29,12 @@ async def add_unit(name: str, description: str) -> Unit:
     return [Unit(**unit.as_dict()) for unit in db_units][0]
 
 
-async def update_unit(id: int, name: str, description: str) -> Unit:
+async def update_unit(input: UpdateUnitInput) -> Unit:
     session = get_sync_session()
     sql = (
         update(graph.Unit)
-        .where(graph.Unit.id == id)
-        .values(name=name, description=description)
+        .where(graph.Unit.id == input.id)
+        .values(**input.model_dump(exclude_none=True, exclude={"id"}))
         .returning(graph.Unit)
     )
     db_units = session.execute(sql).scalars().unique().all()
@@ -49,3 +55,38 @@ async def get_documents() -> list[Document]:
     sql = select(graph.Document).order_by(graph.Document.name)
     db_documents = session.execute(sql).scalars().unique().all()
     return [Document(**unit.as_dict()) for unit in db_documents]
+
+
+async def add_document(input: AddDocumentInput) -> Document:
+    session = get_sync_session()
+    sql = (
+        insert(graph.Document)
+        .values(**input.model_dump(exclude_none=True))
+        .returning(graph.Document)
+    )
+    db_documents = session.execute(sql).scalars().unique().all()
+    session.commit()
+    return [Document(**document.as_dict()) for document in db_documents][0]
+
+
+async def update_document(input: UpdateDocumentInput) -> Document:
+    session = get_sync_session()
+    sql = (
+        update(graph.Document)
+        .where(graph.Document.id == input.id)
+        .values(**input.model_dump(exclude_none=True, exclude={"id"}))
+        .returning(graph.Document)
+    )
+    db_documents = session.execute(sql).scalars().unique().all()
+    session.commit()
+    return [Document(**document.as_dict()) for document in db_documents][0]
+
+
+async def delete_document(id: int) -> Document:
+    session = get_sync_session()
+    sql = (
+        delete(graph.Document).where(graph.Document.id == id).returning(graph.Document)
+    )
+    db_documents = session.execute(sql).scalars().unique().all()
+    session.commit()
+    return [Document(**document.as_dict()) for document in db_documents][0]
