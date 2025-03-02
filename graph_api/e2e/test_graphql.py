@@ -20,7 +20,7 @@ def test_add_and_delete_unit():
     add_mutation = """
     mutation CreateUnit {
         unit {
-            add(input: {description: "test", name: "test"}) {
+            addUnit(input: {description: "test", name: "test"}) {
                 id,
                 name,
                 description
@@ -36,15 +36,15 @@ def test_add_and_delete_unit():
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()["data"]
-    unit_id = int(data["unit"]["add"]["id"])
+    unit_id = int(data["unit"]["addUnit"]["id"])
     assert data == {
-        "unit": {"add": {"id": unit_id, "name": "test", "description": "test"}}
+        "unit": {"addUnit": {"id": unit_id, "name": "test", "description": "test"}}
     }
 
     update_mutation = """
     mutation UpdateUnit {{
         unit {{
-            update(input: {{
+            updateUnit(input: {{
                 id: {unit_id},
                 name: "updated test",
                 description: "updated description"
@@ -68,7 +68,7 @@ def test_add_and_delete_unit():
     data = response.json()["data"]
     assert data == {
         "unit": {
-            "update": {
+            "updateUnit": {
                 "id": unit_id,
                 "name": "updated test",
                 "description": "updated description",
@@ -79,7 +79,7 @@ def test_add_and_delete_unit():
     delete_mutation = """
     mutation DeleteUnit {{
         unit {{
-            delete(input: {{
+            deleteUnit(input: {{
                 id: {unit_id}
             }}) {{
                 id,
@@ -101,7 +101,7 @@ def test_add_and_delete_unit():
     data = response.json()["data"]
     assert data == {
         "unit": {
-            "delete": {
+            "deleteUnit": {
                 "id": unit_id,
                 "name": "updated test",
                 "description": "updated description",
@@ -173,11 +173,13 @@ def test_add_and_delete_unit_with_documents():
     update_document_mutation = """
     mutation UpdateDocument {{
         document {{
-            updateDocument(input: {{
-                id: {document_id}}},
-                name: "document_name",
-                content: {{ "co2": "10 ton"}},
-                description: "document_description"
+            updateDocument(
+                input: {{
+                    id: {document_id},
+                    content: "{{\\\"co2\\\": \\\"10 ton\\\"}}",
+                    description: "document_description",
+                    name: "document_name"
+                }}
             ) {{
                 id
                 unitId
@@ -188,12 +190,13 @@ def test_add_and_delete_unit_with_documents():
         }}
     }}
     """.format(
-        document_id=document_id
+        document_id=document_id,
     )
     response = client.post(
         url="/v1/graphql",
         json={"query": update_document_mutation},
     )
+    print(update_document_mutation)
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()["data"]
@@ -203,9 +206,9 @@ def test_add_and_delete_unit_with_documents():
             "updateDocument": {
                 "id": document_id,
                 "unitId": unit_id,
-                "name": "test",
-                "description": None,
-                "content": {},
+                "name": "document_name",
+                "description": "document_description",
+                "content": {"co2": "10 ton"},
             }
         }
     }
@@ -238,77 +241,42 @@ def test_add_and_delete_unit_with_documents():
             "deleteDocument": {
                 "id": document_id,
                 "unitId": unit_id,
-                "name": "test",
-                "description": None,
-                "content": {},
+                "name": "document_name",
+                "description": "document_description",
+                "content": {"co2": "10 ton"},
             }
         }
     }
 
-    # update_unit_mutation = """
-    # mutation UpdateUnit {{
-    #     unit {{
-    #         update(input: {{
-    #             id: {unit_id},
-    #             name: "updated test",
-    #             description: "updated description"
-    #         }}) {{
-    #             id,
-    #             name,
-    #             description
-    #         }}
-    #     }}
-    # }}
-    # """.format(
-    #     unit_id=unit_id
-    # )
+    delete_unit_mutation = """
+    mutation DeleteUnit {{
+        unit {{
+            deleteUnit(input: {{
+                id: {unit_id}
+            }}) {{
+                id,
+                name,
+                description
+            }}
+        }}
+    }}
+    """.format(
+        unit_id=unit_id
+    )
 
-    # response = client.post(
-    #     url="/v1/graphql",
-    #     json={"query": update_unit_mutation},
-    # )
-    # assert response.status_code == status.HTTP_200_OK
+    response = client.post(
+        url="/v1/graphql",
+        json={"query": delete_unit_mutation},
+    )
+    assert response.status_code == status.HTTP_200_OK
 
-    # data = response.json()["data"]
-    # assert data == {
-    #     "unit": {
-    #         "update": {
-    #             "id": unit_id,
-    #             "name": "updated test",
-    #             "description": "updated description",
-    #         }
-    #     }
-    # }
-
-    # delete_unit_mutation = """
-    # mutation DeleteUnit {{
-    #     unit {{
-    #         delete(input: {{
-    #             id: {unit_id}
-    #         }}) {{
-    #             id,
-    #             name,
-    #             description
-    #         }}
-    #     }}
-    # }}
-    # """.format(
-    #     unit_id=unit_id
-    # )
-
-    # response = client.post(
-    #     url="/v1/graphql",
-    #     json={"query": delete_unit_mutation},
-    # )
-    # assert response.status_code == status.HTTP_200_OK
-
-    # data = response.json()["data"]
-    # assert data == {
-    #     "unit": {
-    #         "delete": {
-    #             "id": unit_id,
-    #             "name": "updated test",
-    #             "description": "updated description",
-    #         }
-    #     }
-    # }
+    data = response.json()["data"]
+    assert data == {
+        "unit": {
+            "deleteUnit": {
+                "id": unit_id,
+                "name": "test",
+                "description": "test",
+            }
+        }
+    }

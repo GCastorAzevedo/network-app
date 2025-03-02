@@ -41,8 +41,9 @@ class UnitMutations:
 
 def transform_json_to_dict(value: JSON | None) -> dict | None:
     if isinstance(value, str):
-        value = json.dumps(value)
-    return strawberry.asdict(value) if value is not None else None
+        value = json.loads(value)
+    # TODO: understand if should use 'strawberry.asdict(value)'
+    return value if isinstance(value, dict) else None
 
 
 @strawberry.type
