@@ -17,6 +17,13 @@ async def get_units() -> list[Unit]:
     return [Unit(**unit.as_dict()) for unit in db_units]
 
 
+async def get_unit_by_id(id: int) -> Unit:
+    session = get_sync_session()
+    sql = select(graph.Unit).where(graph.Unit.id == id)
+    db_units = session.execute(sql).scalars().unique().all()
+    return Unit(**db_units[0].as_dict())
+
+
 async def add_unit(input: AddUnitInput) -> Unit:
     session = get_sync_session()
     sql = (
@@ -26,7 +33,7 @@ async def add_unit(input: AddUnitInput) -> Unit:
     )
     db_units = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Unit(**unit.as_dict()) for unit in db_units][0]
+    return Unit(**db_units[0].as_dict())
 
 
 async def update_unit(input: UpdateUnitInput) -> Unit:
@@ -39,7 +46,7 @@ async def update_unit(input: UpdateUnitInput) -> Unit:
     )
     db_units = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Unit(**unit.as_dict()) for unit in db_units][0]
+    return Unit(**db_units[0].as_dict())
 
 
 async def delete_unit(id: int) -> Unit:
@@ -47,7 +54,7 @@ async def delete_unit(id: int) -> Unit:
     sql = delete(graph.Unit).where(graph.Unit.id == id).returning(graph.Unit)
     db_units = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Unit(**unit.as_dict()) for unit in db_units][0]
+    return Unit(**db_units[0].as_dict())
 
 
 async def get_documents() -> list[Document]:
@@ -55,6 +62,13 @@ async def get_documents() -> list[Document]:
     sql = select(graph.Document).order_by(graph.Document.name)
     db_documents = session.execute(sql).scalars().unique().all()
     return [Document(**unit.as_dict()) for unit in db_documents]
+
+
+async def get_document_by_id(id: int) -> Document:
+    session = get_sync_session()
+    sql = select(graph.Document).where(graph.Document.id == id)
+    db_documents = session.execute(sql).scalars().unique().all()
+    return Document(**db_documents[0].as_dict())
 
 
 async def add_document(input: AddDocumentInput) -> Document:
@@ -66,7 +80,7 @@ async def add_document(input: AddDocumentInput) -> Document:
     )
     db_documents = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Document(**document.as_dict()) for document in db_documents][0]
+    return Document(**db_documents[0].as_dict())
 
 
 async def update_document(input: UpdateDocumentInput) -> Document:
@@ -79,7 +93,7 @@ async def update_document(input: UpdateDocumentInput) -> Document:
     )
     db_documents = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Document(**document.as_dict()) for document in db_documents][0]
+    return Document(**db_documents[0].as_dict())
 
 
 async def delete_document(id: int) -> Document:
@@ -89,4 +103,4 @@ async def delete_document(id: int) -> Document:
     )
     db_documents = session.execute(sql).scalars().unique().all()
     session.commit()
-    return [Document(**document.as_dict()) for document in db_documents][0]
+    return Document(**db_documents[0].as_dict())

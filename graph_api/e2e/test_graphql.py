@@ -135,6 +135,28 @@ def test_add_and_delete_unit_with_documents():
         "unit": {"addUnit": {"id": unit_id, "name": "test", "description": "test"}}
     }
 
+    get_unit_query = """
+    query GetUnit($id: Int = {unit_id}) {{
+        unit(id: $id) {{
+            id
+            name
+            description
+        }}
+    }}
+    """.format(
+        unit_id=unit_id
+    )
+
+    response = client.post(
+        url="/v1/graphql",
+        json={"query": get_unit_query},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    unit_id = int(data["unit"]["id"])
+    assert data == {"unit": {"id": unit_id, "name": "test", "description": "test"}}
+
     add_document_mutation = """
     mutation CreateDocument {{
         document {{
@@ -170,6 +192,37 @@ def test_add_and_delete_unit_with_documents():
         }
     }
 
+    get_document_query = """
+    query GetDocument($id: Int = {document_id}) {{
+        document(id: $id) {{
+            id
+            unitId
+            name
+            content
+            description
+        }}
+    }}
+    """.format(
+        document_id=document_id
+    )
+
+    response = client.post(
+        url="/v1/graphql",
+        json={"query": get_document_query},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    assert data == {
+        "document": {
+            "id": document_id,
+            "unitId": unit_id,
+            "name": "test",
+            "description": None,
+            "content": {},
+        }
+    }
+
     update_document_mutation = """
     mutation UpdateDocument {{
         document {{
@@ -196,7 +249,6 @@ def test_add_and_delete_unit_with_documents():
         url="/v1/graphql",
         json={"query": update_document_mutation},
     )
-    print(update_document_mutation)
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()["data"]
