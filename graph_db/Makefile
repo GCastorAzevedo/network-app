@@ -1,12 +1,19 @@
 # Makefile to export Alembic environment variables
 
-export ALEMBIC_USERNAME=postgres
-export ALEMBIC_PASSWORD=postgres
-export DATABASE_NAME=postgres
-
 .PHONY: export
 export:
-	@echo "Environment variables exported."
+ifeq ($(OS),Windows_NT)  # Windows (cmd or PowerShell)
+	@echo "Exporting environment variables on Windows..."
+	set ALEMBIC_USERNAME=postgres
+	set ALEMBIC_PASSWORD=postgres
+	set DATABASE_NAME=postgres
+else  # Linux/macOS
+	@echo "Exporting environment variables on Unix-like OS..."
+	export ALEMBIC_USERNAME=postgres
+	export ALEMBIC_PASSWORD=postgres
+	export DATABASE_NAME=postgres
+endif
+
 
 .PHONY: add_non_superuser_symlink
 add_non_superuser_symlink:
