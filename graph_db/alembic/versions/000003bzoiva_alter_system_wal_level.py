@@ -9,6 +9,8 @@ Create Date: 2025-02-22 14:51:49.122208
 from typing import Sequence, Union
 from alembic import op
 from sqlalchemy import text
+from uuid import uuid4
+import os
 
 
 # revision identifiers, used by Alembic.
@@ -18,8 +20,8 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-POSTGRES_USER_DEBEZIUM_PASSWORD: str = (
-    "dbz_1234"  # os.getenv("POSTGRES_USER_DEBEZIUM_PASSWORD", uuid4())
+POSTGRES_USER_DEBEZIUM_PASSWORD: str = os.getenv(
+    "POSTGRES_USER_DEBEZIUM_PASSWORD", uuid4()
 )
 
 
