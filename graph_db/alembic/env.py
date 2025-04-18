@@ -10,7 +10,8 @@ from sqlalchemy import pool
 from alembic import context
 from alembic.script import ScriptDirectory
 
-from graph_db.models.base import Base
+from graph_db.models.base import Base, EntityBase
+import graph_db.models.graph
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

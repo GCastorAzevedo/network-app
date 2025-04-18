@@ -1,11 +1,11 @@
-from graph_db.models.base import Base, GraphBase
+from graph_db.models.base import Base, EntityBase
 from sqlalchemy import Column, Integer, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy import event, DDL
 
 
-class Unit(Base):
+class Unit(EntityBase):
     __tablename__ = "unit"
     __table_args__ = {"schema": "public"}
 
@@ -17,7 +17,7 @@ class Unit(Base):
         return {"id": self.id, "name": self.name, "description": self.description}
 
 
-class Document(Base):
+class Document(EntityBase):
     __tablename__ = "document"
     __table_args__ = {"schema": "public"}
     unit_id = Column(
@@ -37,32 +37,32 @@ class Document(Base):
         }
 
 
-class Label(GraphBase):
+class Label(Base):
     __tablename__ = "label"
     __table_args__ = {"schema": "public"}
 
     name = Column(String, unique=True, nullable=False)
 
-    nodes = relationship("Node", back_populates="label")
+    nodes = relationship("Node", back_populates="node_label")
 
 
-class Relation(GraphBase):
+class Relation(Base):
     __tablename__ = "relation"
     __table_args__ = {"schema": "public"}
 
     name = Column(String, unique=True, nullable=False)
 
-    edges = relationship("Edge", back_populates="relation")
+    edges = relationship("Edge", back_populates="edge_relation")
 
 
-class Node(GraphBase):
+class Node(Base):
     __tablename__ = "node"
     __table_args__ = {"schema": "public"}
 
     label = Column(String, ForeignKey(Label.name), nullable=False)
     properties = Column(JSONB, nullable=False, default=dict)
 
-    label = relationship("Label", back_populates="nodes")
+    node_label = relationship("Label", back_populates="nodes")
     outgoing_edges = relationship(
         "Edge",
         back_populates="source_node",
@@ -80,7 +80,7 @@ class Node(GraphBase):
         return {"id": self.id, "label": self.label, "properties": self.properties}
 
 
-class Edge(GraphBase):
+class Edge(Base):
     __tablename__ = "edge"
     __table_args__ = (
         UniqueConstraint("source_id", "target_id", "relation", name="uq_edge"),
@@ -93,7 +93,7 @@ class Edge(GraphBase):
     target_id = Column(Integer, ForeignKey(Node.id, ondelete="CASCADE"), nullable=False)
     relation = Column(String, ForeignKey(Relation.name), nullable=False)
 
-    relation = relationship("Relation", back_populates="edges")
+    edge_relation = relationship("Relation", back_populates="edges")
     source_node = relationship(
         "Node", foreign_keys=[source_id], back_populates="outgoing_edges"
     )

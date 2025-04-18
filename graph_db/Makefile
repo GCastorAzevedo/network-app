@@ -1,7 +1,8 @@
 # Makefile to export Alembic environment variables
 
-.PHONY: export
-export:
+.PHONY: os_export add_non_superuser_symlink upgrade_alembic_from_graph_db run_alembic_from_root run_alembic_from_root_autogenerate
+
+os_export:
 ifeq ($(OS),Windows_NT)  # Windows (cmd or PowerShell)
 	@echo "Exporting environment variables on Windows..."
 	set ALEMBIC_USERNAME=postgres
@@ -14,20 +15,19 @@ else  # Linux/macOS
 	export DATABASE_NAME=postgres
 endif
 
-
-.PHONY: add_non_superuser_symlink
 add_non_superuser_symlink:
 # https://age.apache.org/age-manual/master/intro/setup.html
 	@echo "Creating symbolic link for AGE extension..."
 	@ln -sf /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/plugins/age.so
 	@echo "Symbolic link created."
 
-.PHONY: upgrade_alembic_from_graph_db
 upgrade_alembic_from_graph_db:
 	@echo "Upgrading Alembic..."
 	@PYTHONPATH=../ alembic upgrade head
 	@echo "Alembic upgraded."
 
-.PHONY: run_alembic_from_root
 run_alembic_from_root:
 	@ PYTHONPATH=. alembic -c graph_db/alembic.ini current
+
+run_alembic_from_root_autogenerate:
+	@ DATABASE_HOSTNAME="localhost" PYTHONPATH=. alembic -c graph_db/alembic.ini revision --autogenerate -m "Create Node Edge Label Relation tables"
