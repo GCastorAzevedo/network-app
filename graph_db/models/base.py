@@ -20,3 +20,13 @@ class Base(DeclarativeBase):
     )
 
     # TODO: Add a method to get by ID
+
+
+class GraphBase(DeclarativeBase):
+    id = Column(Integer, primary_key=True)
+    created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    modified = Column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        onupdate=datetime.now(timezone.utc),
+    )
