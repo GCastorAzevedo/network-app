@@ -1,8 +1,8 @@
-"""Create Node Edge Label Relation tables
+"""create node edge label relation tables
 
-Revision ID: 000005fybnfx
-Revises: 000004kqlgty
-Create Date: 2025-04-18 23:57:05.340720
+Revision ID: 000003ckzjqq
+Revises: 000002rqnpgl
+Create Date: 2025-04-19 09:59:12.514262
 
 """
 
@@ -12,9 +12,10 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+
 # revision identifiers, used by Alembic.
-revision: str = "000005fybnfx"
-down_revision: Union[str, None] = "000004kqlgty"
+revision: str = "000003ckzjqq"
+down_revision: Union[str, None] = "000002rqnpgl"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -58,61 +59,6 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
-        schema="public",
-    )
-    op.create_table(
-        "unit",
-        sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column("description", sa.String(length=1000), nullable=True),
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "created",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.Column(
-            "modified",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        schema="public",
-    )
-    op.create_table(
-        "document",
-        sa.Column("unit_id", sa.Integer(), nullable=False),
-        sa.Column(
-            "content",
-            postgresql.JSONB(astext_type=sa.Text()),
-            server_default="{}",
-            nullable=False,
-        ),
-        sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column("description", sa.String(length=1000), nullable=True),
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "created",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.Column(
-            "modified",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.ForeignKeyConstraint(["unit_id"], ["public.unit.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
-        schema="public",
-    )
-    op.create_index(
-        op.f("ix_public_document_unit_id"),
-        "document",
-        ["unit_id"],
-        unique=False,
         schema="public",
     )
     op.create_table(
@@ -174,10 +120,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("edge", schema="public")
     op.drop_table("node", schema="public")
-    op.drop_index(
-        op.f("ix_public_document_unit_id"), table_name="document", schema="public"
-    )
-    op.drop_table("document", schema="public")
-    op.drop_table("unit", schema="public")
     op.drop_table("relation", schema="public")
     op.drop_table("label", schema="public")

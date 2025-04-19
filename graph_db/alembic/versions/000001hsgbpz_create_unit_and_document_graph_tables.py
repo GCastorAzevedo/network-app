@@ -1,8 +1,8 @@
 """create unit and document graph tables
 
-Revision ID: 000002yohgxz
-Revises: 000001tnctjp
-Create Date: 2025-02-18 15:23:06.998137
+Revision ID: 000001hsgbpz
+Revises:
+Create Date: 2025-04-19 09:51:35.985804
 
 """
 
@@ -12,9 +12,10 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+
 # revision identifiers, used by Alembic.
-revision: str = "000002yohgxz"
-down_revision: Union[str, None] = "000001tnctjp"
+revision: str = "000001hsgbpz"
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

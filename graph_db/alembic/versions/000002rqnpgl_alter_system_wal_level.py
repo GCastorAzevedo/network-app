@@ -1,8 +1,8 @@
 """alter system wal level
 
-Revision ID: 000003bzoiva
-Revises: 000002yohgxz
-Create Date: 2025-02-22 14:51:49.122208
+Revision ID: 000002rqnpgl
+Revises: 000001hsgbpz
+Create Date: 2025-04-19 09:57:28.872974
 
 """
 
@@ -14,8 +14,8 @@ import os
 
 
 # revision identifiers, used by Alembic.
-revision: str = "000003bzoiva"
-down_revision: Union[str, None] = "000002yohgxz"
+revision: str = "000002rqnpgl"
+down_revision: Union[str, None] = "000001hsgbpz"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -58,9 +58,9 @@ def downgrade():
     )
     op.execute(
         f"""
-        DROP ROLE IF EXISTS debezium_{database}_replication_group;
         DROP PUBLICATION IF EXISTS dbz_publication;
         DROP PUBLICATION IF EXISTS cdc;
+        DROP ROLE IF EXISTS debezium_{database}_replication_group;
         """
     )
     op.execute(
