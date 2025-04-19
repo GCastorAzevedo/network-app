@@ -115,6 +115,11 @@ def upgrade() -> None:
         sa.UniqueConstraint("source_id", "target_id", "relation", name="uq_edge"),
         schema="public",
     )
+    op.execute(
+        """
+        INSERT INTO public.LABEL (name) VALUES ('Unit');
+        """
+    )
 
 
 def downgrade() -> None:
