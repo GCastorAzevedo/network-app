@@ -110,39 +110,75 @@ class Edge(Base):
         }
 
 
-# #############################################################################################
+# Trigger: create unit node
+insert_graph_unit_node_function = DDL(
+    """
+    CREATE OR REPLACE FUNCTION insert_unit_node() RETURNS TRIGGER AS $$
+        BEGIN
+            INSERT INTO public.node (label, properties)
+            VALUES (
+                'Unit',
+                jsonb_build_object(
+                    'id', NEW.id
+                )
+            );
+            RETURN NEW;
+        END;
+    $$ LANGUAGE plpgsql;
+    """
+)
 
-# from sqlalchemy import event, DDL
+insert_graph_unit_node_trigger = DDL(
+    """
+    CREATE OR REPLACE TRIGGER insert_unit_node
+    AFTER INSERT ON public.unit
+    FOR EACH ROW
+    EXECUTE FUNCTION insert_unit_node();
+    """
+)
 
-# create_graph_node_function = DDL(
-#     "CREATE FUNCTION add_node() RETURNS TRIGGER AS $$ "
-#     "BEGIN NEW.data := 'ins'; "
-#     "RETURN NEW; "
-#     "END; $$ LANGUAGE PLPGSQL"
-# )
+event.listen(
+    Unit.__table__,
+    "after_create",
+    insert_graph_unit_node_function.execute_if(dialect="postgresql"),
+)
 
-# update_graph_node_function = DDL("CREATE FUNCTION update_node() RETURNS TRIGGER AS $$ ")
+event.listen(
+    Unit.__table__,
+    "after_create",
+    insert_graph_unit_node_trigger.execute_if(dialect="postgresql"),
+)
 
-# delete_graph_node_function = DDL("CREATE FUNCTION delete_node() RETURNS TRIGGER AS $$ ")
+# Trigger: delete unit node
+delete_graph_unit_node_function = DDL(
+    """
+    CREATE OR REPLACE FUNCTION delete_unit_node() RETURNS TRIGGER AS $$
+        BEGIN
+            DELETE FROM public.node
+            WHERE label = 'Unit' AND (properties ->> 'id')::int = New.id;
+            RETURN OLD;
+        END;
+    $$ LANGUAGE plpgsql;
+    """
+)
 
-# create_graph_node_trigger = DDL("CREATE TRIGGER dt_ins AFTER INSERT ON document ")
+delete_graph_unit_node_trigger = DDL(
+    """
+    CREATE OR REPLACE TRIGGER delete_unit_node
+    AFTER DELETE ON public.unit
+    FOR EACH ROW
+    EXECUTE FUNCTION delete_unit_node();
+    """
+)
 
-# update_graph_node_trigger = DDL("CREATE TRIGGER dt_ins AFTER UPDATE ON document ")
+event.listen(
+    Unit.__table__,
+    "after_create",
+    delete_graph_unit_node_function.execute_if(dialect="postgresql"),
+)
 
-# delete_graph_node_trigger = DDL("CREATE TRIGGER dt_ins AFTER DELETE ON document ")
-
-# event.listen(
-#     Document.__table__,
-#     "after_create",
-#     create_graph_node_function.execute_if(dialect="postgresql"),
-# )
-# event.listen(
-#     Document.__table__,
-#     "after_update",
-#     update_graph_node_function.execute_if(dialect="postgresql"),
-# )
-# event.listen(
-#     Document.__table__,
-#     "after_delete",
-#     delete_graph_node_function.execute_if(dialect="postgresql"),
-# )
+event.listen(
+    Unit.__table__,
+    "after_create",
+    delete_graph_unit_node_trigger.execute_if(dialect="postgresql"),
+)
