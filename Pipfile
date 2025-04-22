@@ -13,6 +13,8 @@ psycopg = {extras = ["binary"], version = "*"}
 pydantic-settings = "*"
 fastapi = {extras = ["standard"], version = "*"}
 strawberry-graphql = {extras = ["fastapi"], version = "*"}
+pyjwt = "*"
+passlib = "*"
 
 [dev-packages]
 black = "*"

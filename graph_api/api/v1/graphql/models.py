@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+# TODO: check the page https://strawberry.rocks/docs/integrations/pydantic
 class AddDocumentInput(BaseModel):
     unit_id: int
     name: str
