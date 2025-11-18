@@ -13,8 +13,9 @@ psycopg = {extras = ["binary"], version = "*"}
 pydantic-settings = "*"
 fastapi = {extras = ["standard"], version = "*"}
 strawberry-graphql = {extras = ["fastapi"], version = "*"}
-pyjwt = "*"
 passlib = "*"
+pyjwt = "*"
+pwdlib = {extras = ["argon2"], version = "*"}
 
 [dev-packages]
 black = "*"
