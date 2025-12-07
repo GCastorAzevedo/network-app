@@ -3,38 +3,7 @@ from sqlalchemy import Column, Integer, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy import event, DDL
-
-
-class Unit(EntityBase):
-    __tablename__ = "unit"
-    __table_args__ = {"schema": "public"}
-
-    documents = relationship(
-        "Document", back_populates="unit", cascade="all, delete", passive_deletes=True
-    )
-
-    def as_dict(self):
-        return {"id": self.id, "name": self.name, "description": self.description}
-
-
-class Document(EntityBase):
-    __tablename__ = "document"
-    __table_args__ = {"schema": "public"}
-    unit_id = Column(
-        Integer, ForeignKey(Unit.id, ondelete="CASCADE"), index=True, nullable=False
-    )
-    content = Column(JSONB, nullable=False, server_default="{}")
-
-    unit = relationship("Unit", back_populates="documents")
-
-    def as_dict(self):
-        return {
-            "id": self.id,
-            "unit_id": self.unit_id,
-            "name": self.name,
-            "description": self.description,
-            "content": self.content,
-        }
+from sqlalchemy.dialects.postgresql import ARRAY
 
 
 class Label(Base):
@@ -80,6 +49,68 @@ class Node(Base):
         return {"id": self.id, "label": self.label, "properties": self.properties}
 
 
+class Unit(EntityBase):
+    __tablename__ = "unit"
+    __table_args__ = {"schema": "public"}
+
+    node_id = Column(
+        Integer,
+        ForeignKey(Node.id, ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=False,
+    )
+    ancestors = Column(ARRAY(Integer), nullable=False, default=list, index=True)
+    children = Column(ARRAY(Integer), nullable=False, default=list, index=True)
+
+    unit = relationship("Node", back_populates="units")
+
+    #     node_id = Column(
+    #         Integer,
+    #         ForeignKey("public.nodes.id", ondelete="CASCADE"),
+    #         primary_key=True,
+    #     )
+    #     tenant_id = Column(String(64), nullable=False, primary_key=True, index=True)
+
+    #     ancestors = Column(ARRAY(Integer), nullable=False, default=list, index=False)
+    #     children = Column(ARRAY(Integer), nullable=False, default=list, index=False)
+
+    #     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    #     modified = Column(
+    #         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
+    #     )
+
+    #     node = relationship("Node", back_populates="reachable")
+
+    documents = relationship(
+        "Document", back_populates="unit", cascade="all, delete", passive_deletes=True
+    )
+
+    def as_dict(self):
+        return {"id": self.id, "name": self.name, "description": self.description}
+
+
+class Document(EntityBase):
+    __tablename__ = "document"
+    __table_args__ = {"schema": "public"}
+    unit_id = Column(
+        Integer, ForeignKey(Unit.id, ondelete="CASCADE"), index=True, nullable=False
+    )
+    content = Column(JSONB, nullable=False, server_default="{}")
+
+    unit = relationship("Unit", back_populates="documents")
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "unit_id": self.unit_id,
+            "name": self.name,
+            "description": self.description,
+            "content": self.content,
+        }
+
+
+# TODO: deprecate
 class Edge(Base):
     __tablename__ = "edge"
     __table_args__ = (
@@ -182,3 +213,157 @@ event.listen(
     "after_create",
     delete_graph_unit_node_trigger.execute_if(dialect="postgresql"),
 )
+
+# ##########################################################################
+# TODO: ####################################################################
+
+# from sqlalchemy import Column, Integer, String, JSON
+# from sqlalchemy.sql import func
+# from sqlalchemy import ForeignKey, TIMESTAMP
+# from sqlalchemy.orm import relationship, DeclarativeBase
+# from sqlalchemy.dialects.postgresql import ARRAY
+
+
+# class Base(DeclarativeBase):
+#     pass
+
+
+# NAME_MAX_LENGTH = 100
+# DESCRIPTION_MAX_LENGTH = 1000
+
+
+# class Node(Base):
+#     __tablename__ = "nodes"
+#     __table_args__ = {"schema": "public"}
+
+#     id = Column(Integer, primary_key=True)
+#     tenant_id = Column(String(64), nullable=False, index=True)
+#     name = Column(String(NAME_MAX_LENGTH), nullable=False)
+#     description = Column(String(DESCRIPTION_MAX_LENGTH))
+#     properties = Column(JSON, nullable=True)
+
+#     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+#     modified = Column(
+#         TIMESTAMP(timezone=True),
+#         server_default=func.now(),
+#         onupdate=func.now(),
+#     )
+
+#     # edges where this node is parent
+#     suppliers = relationship(
+#         "Adjacency",
+#         back_populates="from_node",
+#         foreign_keys="Adjacency.from_id",
+#         cascade="all, delete-orphan",
+#     )
+
+#     # edges where this node is child
+#     customers = relationship(
+#         "Adjacency",
+#         back_populates="to_node",
+#         foreign_keys="Adjacency.to_id",
+#         cascade="all, delete",
+#     )
+
+#     reachable = relationship(
+#         "ReachableNode",
+#         back_populates="node",
+#         uselist=False,
+#         cascade="all, delete",
+#     )
+
+#     documents = relationship(
+#         "Document",
+#         back_populates="node",
+#         cascade="all, delete-orphan",
+#     )
+
+
+# class Adjacency(Base):
+#     __tablename__ = "adjacency"
+#     __table_args__ = {"schema": "public"}
+
+#     from_id = Column(
+#         Integer,
+#         ForeignKey("public.nodes.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     )
+#     to_id = Column(
+#         Integer,
+#         primary_key=True,
+#     )
+#     tenant_id = Column(String(64), nullable=False, index=True)
+
+#     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+#     modified = Column(
+#         TIMESTAMP(timezone=True),
+#         server_default=func.now(),
+#         onupdate=func.now(),
+#     )
+
+#     from_node = relationship("Node", back_populates="suppliers", foreign_keys=[from_id])
+#     to_node = relationship("Node", back_populates="customers", foreign_keys=[to_id])
+
+
+# class ReachableNode(Base):
+#     __tablename__ = "reachable_nodes"
+#     __table_args__ = {"schema": "public"}
+
+#     node_id = Column(
+#         Integer,
+#         ForeignKey("public.nodes.id", ondelete="CASCADE"),
+#         primary_key=True,
+#     )
+#     tenant_id = Column(String(64), nullable=False, primary_key=True, index=True)
+
+#     ancestors = Column(ARRAY(Integer), nullable=False, default=list, index=False)
+#     children = Column(ARRAY(Integer), nullable=False, default=list, index=False)
+
+#     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+#     modified = Column(
+#         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
+#     )
+
+#     node = relationship("Node", back_populates="reachable")
+
+
+# class Document(Base):
+#     __tablename__ = "documents"
+#     __table_args__ = {"schema": "public"}
+
+#     document_id = Column(Integer, primary_key=True)
+#     tenant_id = Column(String(64), nullable=False, index=True)
+
+#     node_id = Column(
+#         Integer,
+#         ForeignKey("public.nodes.id", ondelete="CASCADE"),
+#         nullable=False,
+#         index=True,
+#     )
+
+#     type = Column(String(64), nullable=False, index=True)
+#     content = Column(JSON, nullable=False)
+
+#     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+#     modified = Column(
+#         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
+#     )
+
+#     node = relationship("Node", back_populates="documents")
+
+
+# class UserAllowedNode(Base):
+#     __tablename__ = "users_allowed_nodes"
+#     __table_args__ = {"schema": "public"}
+
+#     user_id = Column(String(128), primary_key=True)
+#     tenant_id = Column(String(64), nullable=False, primary_key=True, index=True)
+
+#     allowed_roots = Column(ARRAY(Integer), nullable=False, default=list)
+
+#     created = Column(TIMESTAMP(timezone=True), server_default=func.now())
+#     modified = Column(
+#         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
+#     )
+
+# ##########################################################################
