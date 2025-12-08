@@ -46,3 +46,4 @@
     * https://docs.confluent.io/platform/current/installation/docker/config-reference.html#kconnect-long-configuration
     * https://docs.confluent.io/platform/current/installation/configuration/connect/index.html#kconnect-long-configuration-reference-for-cp
     * https://kafka.apache.org/documentation/#connectconfigs
+* Auth examples: https://github.com/lukasthaler/fastapi-oauth-examples/tree/main

@@ -23,5 +23,6 @@ class Base(DeclarativeBase):
 class EntityBase(Base):
     __abstract__ = True
 
+    # TODO: add tenant ID
     name = Column(String(NAME_MAX_LENGTH), nullable=False)
     description = Column(String(DESCRIPTION_MAX_LENGTH))
