@@ -135,9 +135,7 @@ def upgrade() -> None:
                     -- WHERE NOT EXISTS (SELECT 1 FROM ancestors WHERE id = e.source_id)
                     -- Do not specify 'SEARCH' method in case of depth first
                     -- SEARCH BREADTH FIRST BY id SET ordercol
-                )
-                SEARCH DEPTH FIRST BY id SET order_col
-                CYCLE id SET is_cycle USING path
+                ) CYCLE id SET is_cycle USING path
                 SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
                 
                 WITH RECURSIVE descendants(id) AS (
@@ -145,9 +143,7 @@ def upgrade() -> None:
                     UNION ALL
                     SELECT edges.target_id AS id FROM descendants
                         JOIN edges ON descendants.id = edges.source_id
-                )
-                SEARCH DEPTH FIRST BY id SET order_col
-                CYCLE id SET is_cycle USING path
+                ) CYCLE id SET is_cycle USING path
                 SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
 
                 NEW.ancestors := COALESCE(ancestors_arr, ARRAY[]::INTEGER[]);
