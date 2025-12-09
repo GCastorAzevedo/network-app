@@ -122,9 +122,7 @@ class Unit(EntityBase):
     #     order_by=path,
     # )
     #
-
-    # node = relationship("Node", back_populates="reachable")
-    unit = relationship("Node", back_populates="units")
+    node = relationship("Node", back_populates="units")
 
     # TODO: deprecate
     documents = relationship(
@@ -175,18 +173,8 @@ class Edge(Base):
     )
 
     # TODO: rename to from_id, to_id
-    source_id = Column(
-        Integer,
-        ForeignKey(Node.id, ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    )
-    target_id = Column(
-        Integer,
-        ForeignKey(Node.id, ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    )
+    source_id = Column(Integer, ForeignKey(Node.id, ondelete="CASCADE"), nullable=False)
+    target_id = Column(Integer, ForeignKey(Node.id, ondelete="CASCADE"), nullable=False)
     relation = Column(String, ForeignKey(Relation.name), nullable=False)
 
     edge_relation = relationship("Relation", back_populates="edges")
