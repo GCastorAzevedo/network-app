@@ -282,24 +282,23 @@ update_unit_tree_on_upsert_function = DDL(
             ancestors_arr INTEGER[];
             descendants_arr INTEGER[];
         BEGIN
-            WITH RECURSIVE ancestors AS (
+            WITH RECURSIVE ancestors(id) AS (
                 SELECT edges.source_id AS id FROM edges WHERE edges.target_id = NEW.node_id
                 UNION ALL
                 SELECT edges.source_id AS id FROM ancestors
                     JOIN edges ON ancestors.id = edge.target_id
                 -- WHERE NOT EXISTS (SELECT 1 FROM ancestors WHERE id = e.source_id)
-            )
-            CYCLE id SET is_cycle TO true DEFAULT false
+                -- Do not specify 'SEARCH' method in case of depth first
+                -- SEARCH BREADTH FIRST BY id SET ordercol
+            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
             SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
             
-            WITH RECURSIVE descendants AS (
+            WITH RECURSIVE descendants(id) AS (
                 SELECT edges.target_id AS id FROM edges WHERE edges.source_id = NEW.node_id
                 UNION ALL
                 SELECT edges.target_id AS id FROM descendants
                     JOIN edges ON descendants.id = edges.source_id
-                -- WHERE NOT EXISTS (SELECT 1 FROM descendants WHERE id = e.target_id)
-            )
-            CYCLE id SET is_cycle TO true DEFAULT false
+            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
             SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
 
             NEW.ancestors := COALESCE(ancestors_arr, ARRAY[]::INTEGER[]);
