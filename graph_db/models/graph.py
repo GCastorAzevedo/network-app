@@ -205,59 +205,6 @@ update_unit_tree_on_upsert_trigger = DDL(
     """
 )
 
-update_unit_tree_on_edge_upsert_function = DDL(
-    """
-    CREATE OR REPLACE FUNCTION update_unit_tree_on_edge_upsert_function() RETURNS AS $$
-        DECLARE
-            ancestors_arr INTEGER[];
-            descendants_arr INTEGER[];
-        BEGIN
-            FOR tree_node IN (
-                SELECT node_id FROM unit
-                WHERE NEW.source_id = ANY (unit.ancestors)
-                    OR NEW.target_id = ANY (unit.descendants)
-            ) LOOP  
-                NEW.ancestors := COALESCE(ancestors_arr, ARRAY[]::INTEGER[]);
-                NEW.descendants := COALESCE(descendants_arr, ARRAY[]::INTEGER[]);
-            END LOOP;
-            RETURN NEW;
-        END;
-    $$ LANGUAGE plpgsql
-    """
-    """
-    CREATE OR REPLACE FUNCTION update_unit_tree_on_upsert() RETURNS TRIGGER AS $$
-        DECLARE
-            ancestors_arr INTEGER[];
-            descendants_arr INTEGER[];
-        BEGIN
-            WITH RECURSIVE ancestors(id) AS (
-                SELECT edge.source_id AS id FROM edge WHERE edge.target_id = NEW.node_id
-                UNION ALL
-                SELECT edge.source_id AS id FROM ancestors
-                    JOIN edge ON ancestors.id = edge.target_id
-                -- WHERE NOT EXISTS (SELECT 1 FROM ancestors WHERE id = e.source_id)
-                -- Do not specify 'SEARCH' method in case of depth first
-                -- SEARCH BREADTH FIRST BY id SET ordercol
-            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-            SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
-            
-            WITH RECURSIVE descendants(id) AS (
-                SELECT edge.target_id AS id FROM edge WHERE edge.source_id = NEW.node_id
-                UNION ALL
-                SELECT edge.target_id AS id FROM descendants
-                    JOIN edge ON descendants.id = edge.source_id
-            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-            SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
-
-            NEW.ancestors := COALESCE(ancestors_arr, ARRAY[]::INTEGER[]);
-            NEW.descendants := COALESCE(descendants_arr, ARRAY[]::INTEGER[]);
-
-            RETURN NEW;
-        END;
-    $$ LANGUAGE plpgsql;
-    """
-)
-
 event.listen(
     Unit.__table__,
     "after_create",
@@ -268,4 +215,60 @@ event.listen(
     Unit.__table__,
     "after_create",
     update_unit_tree_on_upsert_trigger.execute_if(dialect="postgresql"),
+)
+
+update_unit_tree_on_edge_upsert_function = DDL(
+    """
+    CREATE OR REPLACE FUNCTION update_unit_tree_on_edge_upsert() RETURNS AS $$
+        BEGIN
+            UPDATE unit
+            SET
+                ancestors = (
+                    WITH RECURSIVE ancestors(id) AS (
+                        SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
+                        UNION ALL
+                        SELECT edge.source_id AS id FROM ancestors
+                            JOIN edge ON ancestors.id = edge.target_id
+                    ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                    SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
+                )
+                descendants = (
+                    WITH RECURSIVE descendants(id) AS (
+                        SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
+                        UNION ALL
+                        SELECT edge.target_id AS id FROM descendants
+                            JOIN edge ON descendants.id = edge.source_id
+                    ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                    SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
+                )
+                WHERE unit.node_id IN (NEW.source_id, NEW.target_id)
+                    OR NEW.source_id = ANY(unit.ancestors)
+                    OR NEW.target_id = ANY(unit.descendants);
+    
+            RETURN NEW;
+        END;
+    $$ LANGUAGE plpgsql
+    """
+)
+
+update_unit_tree_on_edge_upsert_trigger = DDL(
+    """
+    CREATE OR REPLACE TRIGGER update_unit_tree_on_edge_upsert
+    AFTER INSERT OR UPDATE ON public.edge
+    FOR EACH ROW
+    EXECUTE FUNCTION update_unit_tree_on_edge_upsert();
+    """
+)
+
+
+event.listen(
+    Edge.__table__,
+    "after_create",
+    update_unit_tree_on_edge_upsert_function.execute_if(dialect="postgresql"),
+)
+
+event.listen(
+    Edge.__table__,
+    "after_create",
+    update_unit_tree_on_edge_upsert_trigger.execute_if(dialect="postgresql"),
 )

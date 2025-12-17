@@ -164,6 +164,49 @@ def upgrade() -> None:
         """
     )
 
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION update_unit_tree_on_edge_upsert() RETURNS TRIGGER AS $$
+            BEGIN
+                UPDATE unit
+                SET
+                    ancestors = (
+                        WITH RECURSIVE ancestors(id) AS (
+                            SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
+                            UNION ALL
+                            SELECT edge.source_id AS id FROM ancestors
+                                JOIN edge ON ancestors.id = edge.target_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                        SELECT ARRAY_AGG(DISTINCT id) AS ancestors
+                    ),
+                    descendants = (
+                        WITH RECURSIVE descendants(id) AS (
+                            SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
+                            UNION ALL
+                            SELECT edge.target_id AS id FROM descendants
+                                JOIN edge ON descendants.id = edge.source_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                        SELECT ARRAY_AGG(DISTINCT id) AS descendants
+                    )
+                    WHERE unit.node_id IN (NEW.source_id, NEW.target_id)
+                        OR NEW.source_id = ANY(unit.ancestors)
+                        OR NEW.target_id = ANY(unit.descendants);
+        
+                RETURN NEW;
+            END;
+        $$ LANGUAGE plpgsql
+        """
+    )
+
+    op.execute(
+        """
+        CREATE OR REPLACE TRIGGER update_unit_tree_on_edge_upsert
+        AFTER INSERT OR UPDATE ON public.edge
+        FOR EACH ROW
+        EXECUTE FUNCTION update_unit_tree_on_edge_upsert();
+        """
+    )
+
     op.execute("DROP TRIGGER IF EXISTS insert_unit_node ON public.unit;")
     op.execute("DROP FUNCTION IF EXISTS insert_unit_node;")
 
@@ -174,6 +217,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_upsert ON public.unit;")
     op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_upsert;")
+    op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_edge_upsert ON public.unit;")
+    op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_edge_upsert;")
 
     op.drop_constraint("fk_unit_node_id", "unit", schema="public", type_="foreignkey")
     op.drop_index(op.f("ix_public_unit_node_id"), table_name="unit", schema="public")
