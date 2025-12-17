@@ -22,20 +22,20 @@ from strawberry.field_extensions import InputMutationExtension
 class UnitMutations:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def addUnit(
-        self, info, name: str | None = None, description: str | None = None
+        self, name: str | None = None, description: str | None = None
     ) -> Unit:
         return await add_unit(AddUnitInput(name=name, description=description))
 
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def updateUnit(
-        self, info, id: int, name: str | None = None, description: str | None = None
+        self, id: int, name: str | None = None, description: str | None = None
     ) -> Unit:
         return await update_unit(
             UpdateUnitInput(id=id, name=name, description=description)
         )
 
     @strawberry.mutation(extensions=[InputMutationExtension()])
-    async def deleteUnit(self, info, id: int) -> Unit:
+    async def deleteUnit(self, id: int) -> Unit:
         return await delete_unit(id)
 
 
@@ -51,7 +51,6 @@ class DocumentMutations:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def addDocument(
         self,
-        info,
         unit_id: int,
         name: str,
         description: str | None = None,
@@ -69,7 +68,6 @@ class DocumentMutations:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def updateDocument(
         self,
-        info,
         id: int,
         name: str | None = None,
         description: str | None = None,
@@ -85,7 +83,7 @@ class DocumentMutations:
         )
 
     @strawberry.mutation(extensions=[InputMutationExtension()])
-    async def deleteDocument(self, info, id: int) -> Document:
+    async def deleteDocument(self, id: int) -> Document:
         return await delete_document(id)
 
 

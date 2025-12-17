@@ -19,4 +19,4 @@ run-docker:
 
 .PHONY: debug-strawberry
 debug-strawberry:
-	@ PYTHONPATH=.. strawberry server graph_api.api.v1.graphql.endpoints
+	@ PYTHONPATH=.. DATABASE_URI="postgresql://postgres:postgres@localhost:5432/postgres" strawberry dev graph_api.api.v1.graphql.endpoints

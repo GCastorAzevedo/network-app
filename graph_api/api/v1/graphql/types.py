@@ -13,8 +13,11 @@ JSON = strawberry.scalar(
 @strawberry.type
 class Unit:
     id: int
+    node_id: int
     name: Optional[str] = None
     description: Optional[str] = None
+    ancestors: list[int] = strawberry.field(default_factory=list)
+    descendants: list[int] = strawberry.field(default_factory=list)
 
 
 @strawberry.type

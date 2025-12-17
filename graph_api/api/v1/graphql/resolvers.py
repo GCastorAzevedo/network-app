@@ -26,9 +26,13 @@ async def get_unit_by_id(id: int) -> Unit:
 
 async def add_unit(input: AddUnitInput) -> Unit:
     session = get_sync_session()
+    node = graph.Node(label="Unit", properties={"unit_name": input.name})
+    session.add(node)
+    session.flush()
+
     sql = (
         insert(graph.Unit)
-        .values(**input.model_dump(exclude_none=True))
+        .values(node_id=node.id, **input.model_dump(exclude_none=True))
         .returning(graph.Unit)
     )
     db_units = session.execute(sql).scalars().unique().all()

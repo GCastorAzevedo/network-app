@@ -128,10 +128,10 @@ def upgrade() -> None:
                 descendants_arr INTEGER[];
             BEGIN
                 WITH RECURSIVE ancestors(id) AS (
-                    SELECT edges.source_id AS id FROM edges WHERE edges.target_id = NEW.node_id
+                    SELECT edge.source_id AS id FROM edge WHERE edge.target_id = NEW.node_id
                     UNION ALL
-                    SELECT edges.source_id AS id FROM ancestors
-                        JOIN edges ON ancestors.id = edge.target_id
+                    SELECT edge.source_id AS id FROM ancestors
+                        JOIN edge ON ancestors.id = edge.target_id
                     -- WHERE NOT EXISTS (SELECT 1 FROM ancestors WHERE id = e.source_id)
                     -- Do not specify 'SEARCH' method in case of depth first
                     -- SEARCH BREADTH FIRST BY id SET ordercol
@@ -139,10 +139,10 @@ def upgrade() -> None:
                 SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
                 
                 WITH RECURSIVE descendants(id) AS (
-                    SELECT edges.target_id AS id FROM edges WHERE edges.source_id = NEW.node_id
+                    SELECT edge.target_id AS id FROM edge WHERE edge.source_id = NEW.node_id
                     UNION ALL
-                    SELECT edges.target_id AS id FROM descendants
-                        JOIN edges ON descendants.id = edges.source_id
+                    SELECT edge.target_id AS id FROM descendants
+                        JOIN edge ON descendants.id = edge.source_id
                 ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
                 SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
 
@@ -163,6 +163,12 @@ def upgrade() -> None:
         EXECUTE FUNCTION update_unit_tree_on_upsert();
         """
     )
+
+    op.execute("DROP TRIGGER IF EXISTS insert_unit_node ON public.unit;")
+    op.execute("DROP FUNCTION IF EXISTS insert_unit_node;")
+
+    op.execute("DROP TRIGGER IF EXISTS delete_unit_node ON public.unit;")
+    op.execute("DROP FUNCTION IF EXISTS delete_unit_node;")
 
 
 def downgrade() -> None:
@@ -207,3 +213,50 @@ def downgrade() -> None:
         op.f("ix_public_document_unit_id"), table_name="document", schema="public"
     )
     op.create_index("ix_document_unit_id", "document", ["unit_id"], unique=False)
+
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION insert_unit_node() RETURNS TRIGGER AS $$
+            BEGIN
+                INSERT INTO public.node (label, properties)
+                VALUES (
+                    'Unit',
+                    jsonb_build_object(
+                        'id', NEW.id
+                    )
+                );
+                RETURN NEW;
+            END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
+    op.execute(
+        """
+        CREATE OR REPLACE TRIGGER insert_unit_node
+        AFTER INSERT ON public.unit
+        FOR EACH ROW
+        EXECUTE FUNCTION insert_unit_node();
+        """
+    )
+
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION delete_unit_node() RETURNS TRIGGER AS $$
+            BEGIN
+                DELETE FROM public.node
+                WHERE label = 'Unit' AND (properties ->> 'id')::int = New.id;
+                RETURN OLD;
+            END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
+    op.execute(
+        """
+        CREATE OR REPLACE TRIGGER delete_unit_node
+        AFTER DELETE ON public.unit
+        FOR EACH ROW
+        EXECUTE FUNCTION delete_unit_node();
+        """
+    )
