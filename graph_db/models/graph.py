@@ -137,7 +137,13 @@ class Edge(Base):
     # TODO: rename to from_id, to_id
     source_id = Column(Integer, ForeignKey(Node.id, ondelete="CASCADE"), nullable=False)
     target_id = Column(Integer, ForeignKey(Node.id, ondelete="CASCADE"), nullable=False)
-    relation = Column(String, ForeignKey(Relation.name), nullable=False)
+    relation = Column(
+        String,
+        ForeignKey(Relation.name),
+        nullable=False,
+        default="links",
+        server_default="links",
+    )
 
     edge_relation = relationship("Relation", back_populates="edges")
     source_node = relationship(
@@ -223,23 +229,29 @@ update_unit_tree_on_edge_upsert_function = DDL(
         BEGIN
             UPDATE unit
             SET
-                ancestors = (
-                    WITH RECURSIVE ancestors(id) AS (
-                        SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
-                        UNION ALL
-                        SELECT edge.source_id AS id FROM ancestors
-                            JOIN edge ON ancestors.id = edge.target_id
-                    ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                    SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
-                )
-                descendants = (
-                    WITH RECURSIVE descendants(id) AS (
-                        SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
-                        UNION ALL
-                        SELECT edge.target_id AS id FROM descendants
-                            JOIN edge ON descendants.id = edge.source_id
-                    ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                    SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
+                ancestors = COALESCE(
+                    (
+                        WITH RECURSIVE ancestors(id) AS (
+                            SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
+                            UNION ALL
+                            SELECT edge.source_id AS id FROM ancestors
+                                JOIN edge ON ancestors.id = edge.target_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                        SELECT ARRAY_AGG(DISTINCT id) FROM ancestors
+                    ),
+                    ARRAY[]::INTEGER[]
+                ),
+                descendants = COALESCE(
+                    (
+                        WITH RECURSIVE descendants(id) AS (
+                            SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
+                            UNION ALL
+                            SELECT edge.target_id AS id FROM descendants
+                                JOIN edge ON descendants.id = edge.source_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING PATH
+                        SELECT ARRAY_AGG(DISTINCT id) FROM descendants
+                    ),
+                    ARRAY[]::INTEGER[]
                 )
                 WHERE unit.node_id IN (NEW.source_id, NEW.target_id)
                     OR NEW.source_id = ANY(unit.ancestors)

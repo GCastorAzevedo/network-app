@@ -7,12 +7,15 @@ from graph_api.api.v1.graphql.resolvers import (
     add_document,
     update_document,
     delete_document,
+    add_edge,
+    delete_edge,
 )
-from graph_api.api.v1.graphql.types import Unit, Document, JSON
+from graph_api.api.v1.graphql.types import Unit, Document, Edge, JSON
 from graph_api.api.v1.graphql.models import (
     AddDocumentInput,
     UpdateDocumentInput,
     AddUnitInput,
+    AddEdgeInput,
     UpdateUnitInput,
 )
 from strawberry.field_extensions import InputMutationExtension
@@ -37,6 +40,19 @@ class UnitMutations:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def deleteUnit(self, id: int) -> Unit:
         return await delete_unit(id)
+
+
+@strawberry.type
+class EdgeMutations:
+    @strawberry.mutation(extensions=[InputMutationExtension()])
+    async def addEdge(self, target_unit_id: int, source_unit_id: int) -> Edge:
+        return await add_edge(
+            AddEdgeInput(target_unit_id=target_unit_id, source_unit_id=source_unit_id)
+        )
+
+    @strawberry.mutation(extensions=[InputMutationExtension()])
+    async def deleteEdge(self, id: int) -> Edge:
+        return await delete_edge(id)
 
 
 def transform_json_to_dict(value: JSON | None) -> dict | None:
@@ -96,3 +112,7 @@ class Mutation:
     @strawberry.field
     def document(self) -> DocumentMutations:
         return DocumentMutations()
+
+    @strawberry.field
+    def edge(self) -> EdgeMutations:
+        return EdgeMutations()

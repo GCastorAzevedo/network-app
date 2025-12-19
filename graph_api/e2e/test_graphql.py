@@ -332,3 +332,23 @@ def test_add_and_delete_unit_with_documents():
             }
         }
     }
+
+
+def test_add_units_connected_by_edge():
+    add_unit_mutation = """
+    mutation CreateUnit {
+        unit {
+            addUnit(input: {description: "test", name: "test"}) {
+                id, name, description
+            }
+        }
+    }
+    """
+    response = client.post(url="/v1/graphql", json={"query": add_unit_mutation})
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    unit_id = int(data["unit"]["addUnit"]["id"])
+    assert data == {
+        "unit": {"addUnit": {"id": unit_id, "name": "test", "description": "test"}}
+    }

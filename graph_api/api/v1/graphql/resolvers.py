@@ -1,11 +1,12 @@
 from graph_db.models import graph
 from graph_db.session import get_sync_session
 from sqlalchemy import select, delete, update, insert
-from graph_api.api.v1.graphql.types import Document, Unit
+from graph_api.api.v1.graphql.types import Document, Edge, Unit
 from graph_api.api.v1.graphql.models import (
     AddDocumentInput,
     UpdateDocumentInput,
     AddUnitInput,
+    AddEdgeInput,
     UpdateUnitInput,
 )
 
@@ -59,6 +60,61 @@ async def delete_unit(id: int) -> Unit:
     db_units = session.execute(sql).scalars().unique().all()
     session.commit()
     return Unit(**db_units[0].as_dict())
+
+
+async def get_edges() -> list[Edge]:
+    session = get_sync_session()
+    sql = select(graph.Edge).order_by(graph.Edge.source_id, graph.Edge.target_id)
+    db_edges = session.execute(sql).scalars().unique().all()
+    return [
+        Edge(
+            id=edge.id,
+            source_unit_id=edge.source_id,
+            target_unit_id=edge.target_id,
+        )
+        for edge in db_edges
+    ]
+
+
+async def add_edge(input: AddEdgeInput) -> Edge:
+    session = get_sync_session()
+    # sql = select(graph.Unit).where()
+    # query_target_id = session.query(graph.Unit.node_id).where(
+    #     graph.Unit.id == input.target_unit_id
+    # )
+    # target_id = query_target_id().all()[0]
+
+    # query_source_id = session.query(graph.Unit.node_id).where(
+    #     graph.Unit.id == input.source_unit_id
+    # )
+    # source_id = query_source_id().all()[0]
+    query = session.query(graph.Unit.id, graph.Unit.node_id).where(
+        graph.Unit.id.in_([input.source_unit_id, input.target_unit_id])
+    )
+    s = session.execute(query).all()
+    units = {id: node_id for id, node_id in session.execute(query).all()}
+    if len(units) != 2:
+        raise ValueError("Source or target not found")
+
+    edge = graph.Edge(
+        source_id=units[input.source_unit_id], target_id=input.target_unit_id
+    )
+    session.add(edge)
+    session.commit()
+    # session.flush()
+    return Edge(
+        id=edge.id,
+        source_unit_id=input.source_unit_id,
+        target_unit_id=input.target_unit_id,
+    )
+
+
+async def delete_edge(id: int) -> Edge:
+    session = get_sync_session()
+    sql = delete(graph.Edge).where(graph.Edge.id == id).returning(graph.Edge)
+    db_edges = session.execute(sql).scalars().unique().all()
+    session.commit()
+    return Edge(**db_edges[0].as_dict())
 
 
 async def get_documents() -> list[Document]:

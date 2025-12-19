@@ -21,6 +21,13 @@ class Unit:
 
 
 @strawberry.type
+class Edge:
+    id: int
+    target_unit_id: int
+    source_unit_id: int
+
+
+@strawberry.type
 class Document:
     id: int
     unit_id: int

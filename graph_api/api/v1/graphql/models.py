@@ -26,3 +26,8 @@ class UpdateUnitInput(BaseModel):
     id: int
     name: Optional[str] = None
     description: Optional[str] = None
+
+
+class AddEdgeInput(BaseModel):
+    target_unit_id: int
+    source_unit_id: int

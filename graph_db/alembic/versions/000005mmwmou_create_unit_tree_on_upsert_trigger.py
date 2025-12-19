@@ -11,6 +11,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision: str = "000005mmwmou"
@@ -81,12 +82,24 @@ def upgrade() -> None:
         source_schema="public",
         referent_schema="public",
     )
-    op.add_column("unit", sa.Column("node_id", sa.Integer(), nullable=False))
+    op.add_column("unit", sa.Column("node_id", sa.Integer(), nullable=True))
     op.add_column(
-        "unit", sa.Column("ancestors", postgresql.ARRAY(sa.Integer()), nullable=False)
+        "unit",
+        sa.Column(
+            "ancestors",
+            postgresql.ARRAY(sa.Integer()),
+            nullable=False,
+            server_default=text("ARRAY[]::INTEGER[]"),
+        ),
     )
     op.add_column(
-        "unit", sa.Column("descendants", postgresql.ARRAY(sa.Integer()), nullable=False)
+        "unit",
+        sa.Column(
+            "descendants",
+            postgresql.ARRAY(sa.Integer()),
+            nullable=False,
+            server_default=text("ARRAY[]::INTEGER[]"),
+        ),
     )
     op.create_index(
         op.f("ix_public_unit_ancestors"),
@@ -155,14 +168,14 @@ def upgrade() -> None:
         """
     )
 
-    op.execute(
-        """
-        CREATE OR REPLACE TRIGGER update_unit_tree_on_upsert
-        AFTER INSERT OR UPDATE ON public.unit
-        FOR EACH ROW
-        EXECUTE FUNCTION update_unit_tree_on_upsert();
-        """
-    )
+    # op.execute(
+    #     """
+    #     CREATE OR REPLACE TRIGGER update_unit_tree_on_upsert
+    #     AFTER INSERT OR UPDATE ON public.unit
+    #     FOR EACH ROW
+    #     EXECUTE FUNCTION update_unit_tree_on_upsert();
+    #     """
+    # )
 
     op.execute(
         """
@@ -170,23 +183,29 @@ def upgrade() -> None:
             BEGIN
                 UPDATE unit
                 SET
-                    ancestors = (
-                        WITH RECURSIVE ancestors(id) AS (
-                            SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
-                            UNION ALL
-                            SELECT edge.source_id AS id FROM ancestors
-                                JOIN edge ON ancestors.id = edge.target_id
-                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                        SELECT ARRAY_AGG(DISTINCT id) AS ancestors
+                    ancestors = COALESCE(
+                        (
+                            WITH RECURSIVE ancestors(id) AS (
+                                SELECT edge.source_id AS id FROM edge WHERE edge.target_id = unit.node_id
+                                UNION ALL
+                                SELECT edge.source_id AS id FROM ancestors
+                                    JOIN edge ON ancestors.id = edge.target_id
+                            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                            SELECT ARRAY_AGG(DISTINCT id) FROM ancestors
+                        ),
+                        ARRAY[]::INTEGER[]
                     ),
-                    descendants = (
-                        WITH RECURSIVE descendants(id) AS (
-                            SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
-                            UNION ALL
-                            SELECT edge.target_id AS id FROM descendants
-                                JOIN edge ON descendants.id = edge.source_id
-                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                        SELECT ARRAY_AGG(DISTINCT id) AS descendants
+                    descendants = COALESCE(
+                        (
+                            WITH RECURSIVE descendants(id) AS (
+                                SELECT edge.target_id AS id FROM edge WHERE edge.source_id = unit.node_id
+                                UNION ALL
+                                SELECT edge.target_id AS id FROM descendants
+                                    JOIN edge ON descendants.id = edge.source_id
+                            ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING PATH
+                            SELECT ARRAY_AGG(DISTINCT id) FROM descendants
+                        ),
+                        ARRAY[]::INTEGER[]
                     )
                     WHERE unit.node_id IN (NEW.source_id, NEW.target_id)
                         OR NEW.source_id = ANY(unit.ancestors)
@@ -212,13 +231,31 @@ def upgrade() -> None:
 
     op.execute("DROP TRIGGER IF EXISTS delete_unit_node ON public.unit;")
     op.execute("DROP FUNCTION IF EXISTS delete_unit_node;")
+    # Use backup node to upgrade back:
+    # op.execute(
+    #     """
+    #     UPDATE public.unit
+    #     SET node_id = node_id_bkp
+    #     """
+    # )
+    # op.drop_column("unit", "node_id_bkp")
+    op.alter_column("unit", "node_id", nullable=False)
 
 
 def downgrade() -> None:
+    # Backup node to downgrade then upgrade back:
+    # op.add_column("unit", sa.Column("node_id_bkp", sa.Integer(), nullable=True))
+    # op.execute(
+    #     """
+    #     UPDATE public.unit
+    #     SET node_id_bkp = node_id
+    #     """
+    # )
+    op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_edge_upsert ON public.edge;")
+    op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_edge_upsert;")
+
     op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_upsert ON public.unit;")
     op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_upsert;")
-    op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_edge_upsert ON public.unit;")
-    op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_edge_upsert;")
 
     op.drop_constraint("fk_unit_node_id", "unit", schema="public", type_="foreignkey")
     op.drop_index(op.f("ix_public_unit_node_id"), table_name="unit", schema="public")
