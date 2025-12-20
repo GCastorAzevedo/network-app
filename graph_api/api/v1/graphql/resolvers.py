@@ -88,11 +88,11 @@ async def add_edge(input: AddEdgeInput) -> Edge:
     #     graph.Unit.id == input.source_unit_id
     # )
     # source_id = query_source_id().all()[0]
-    query = session.query(graph.Unit.id, graph.Unit.node_id).where(
+
+    sql = select(graph.Unit.id, graph.Unit.node_id).where(
         graph.Unit.id.in_([input.source_unit_id, input.target_unit_id])
     )
-    s = session.execute(query).all()
-    units = {id: node_id for id, node_id in session.execute(query).all()}
+    units = {id: node_id for id, node_id in session.execute(sql).all()}
     if len(units) != 2:
         raise ValueError("Source or target not found")
 

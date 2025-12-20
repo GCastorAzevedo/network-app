@@ -335,20 +335,158 @@ def test_add_and_delete_unit_with_documents():
 
 
 def test_add_units_connected_by_edge():
-    add_unit_mutation = """
+    add_units_mutation = """
     mutation CreateUnit {
-        unit {
+        n1: unit {
+            addUnit(input: {description: "test", name: "test"}) {
+                id, name, description
+            }
+        },
+        n2: unit {
+            addUnit(input: {description: "test", name: "test"}) {
+                id, name, description
+            }
+        },
+        n3: unit {
+            addUnit(input: {description: "test", name: "test"}) {
+                id, name, description
+            }
+        },
+        n4: unit {
+            addUnit(input: {description: "test", name: "test"}) {
+                id, name, description
+            }
+        },
+        n5: unit {
             addUnit(input: {description: "test", name: "test"}) {
                 id, name, description
             }
         }
     }
     """
-    response = client.post(url="/v1/graphql", json={"query": add_unit_mutation})
+    response = client.post(url="/v1/graphql", json={"query": add_units_mutation})
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()["data"]
-    unit_id = int(data["unit"]["addUnit"]["id"])
+    assert sorted(data.keys()) == ["n1", "n2", "n3", "n4", "n5"]
+    unit_ids = [
+        int(data[node]["addUnit"]["id"]) for node in ["n1", "n2", "n3", "n4", "n5"]
+    ]
+
+    add_edges_mutation = """
+    mutation CreateEdges {{
+        e1: edge {{
+            addEdge(input: {{targetUnitId: {u2}, sourceUnitId: {u1}}}) {{
+                sourceUnitId, targetUnitId
+            }}
+        }},
+        e2: edge {{
+            addEdge(input: {{targetUnitId: {u3}, sourceUnitId: {u2}}}) {{
+                sourceUnitId, targetUnitId
+            }}
+        }},
+        e3: edge {{
+            addEdge(input: {{targetUnitId: {u4}, sourceUnitId: {u3}}}) {{
+                sourceUnitId, targetUnitId
+            }}
+        }},
+        e4: edge {{
+            addEdge(input: {{targetUnitId: {u2}, sourceUnitId: {u4}}}) {{
+                sourceUnitId, targetUnitId
+            }}
+        }},
+        e5: edge {{
+            addEdge(input: {{targetUnitId: {u2}, sourceUnitId: {u5}}}) {{
+                sourceUnitId, targetUnitId
+            }}
+        }}
+    }}
+    """.format(
+        u1=unit_ids[0],
+        u2=unit_ids[1],
+        u3=unit_ids[2],
+        u4=unit_ids[3],
+        u5=unit_ids[4],
+    )
+
+    response = client.post(url="/v1/graphql", json={"query": add_edges_mutation})
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
     assert data == {
-        "unit": {"addUnit": {"id": unit_id, "name": "test", "description": "test"}}
+        "e1": {"addEdge": {"sourceUnitId": unit_ids[0], "targetUnitId": unit_ids[1]}},
+        "e2": {"addEdge": {"sourceUnitId": unit_ids[1], "targetUnitId": unit_ids[2]}},
+        "e3": {"addEdge": {"sourceUnitId": unit_ids[2], "targetUnitId": unit_ids[3]}},
+        "e4": {"addEdge": {"sourceUnitId": unit_ids[3], "targetUnitId": unit_ids[1]}},
+        "e5": {"addEdge": {"sourceUnitId": unit_ids[4], "targetUnitId": unit_ids[1]}},
     }
+
+    get_units_query = """
+    query MyQuery {{
+        u1: unit(id: {u1}) {{
+            descendants
+            ancestors
+        }},
+        u2: unit(id: {u2}) {{
+            descendants
+            ancestors
+        }},
+        u3: unit(id: {u3}) {{
+            descendants
+            ancestors
+        }},
+        u4: unit(id: {u4}) {{
+            descendants
+            ancestors
+        }},
+        u5: unit(id: {u5}) {{
+            descendants
+            ancestors
+        }}
+    }}
+    """.format(
+        u1=unit_ids[0],
+        u2=unit_ids[1],
+        u3=unit_ids[2],
+        u4=unit_ids[3],
+        u5=unit_ids[4],
+    )
+
+    response = client.post(
+        url="/v1/graphql",
+        json={"query": get_units_query},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    assert data == {
+        "u1": {"descendants": unit_ids[1:-1], "ancestors": []},
+        "u2": {"descendants": unit_ids[1:-1], "ancestors": unit_ids},
+        "u3": {"descendants": unit_ids[3:4], "ancestors": unit_ids[:2]},
+        "u4": {"descendants": unit_ids[1:-1], "ancestors": unit_ids},
+        "u5": {"descendants": unit_ids[1:-1], "ancestors": []},
+    }
+
+    delete_units_mutation = """
+    mutation DeleteUnits {{
+        u1: unit(id: {u1}) {{ id }},
+        u2: unit(id: {u2}) {{ id }},
+        u3: unit(id: {u3}) {{ id }},
+        u4: unit(id: {u4}) {{ id }},
+        u5: unit(id: {u5}) {{ id }}
+    }}
+    """.format(
+        u1=unit_ids[0],
+        u2=unit_ids[1],
+        u3=unit_ids[2],
+        u4=unit_ids[3],
+        u5=unit_ids[4],
+    )
+
+    response = client.post(
+        url="/v1/graphql",
+        json={"query": delete_units_mutation},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # TODO: add edge by ID resolverrs, check the edges are gone
