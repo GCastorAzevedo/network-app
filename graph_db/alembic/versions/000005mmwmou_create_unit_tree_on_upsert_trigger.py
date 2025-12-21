@@ -135,47 +135,45 @@ def upgrade() -> None:
 
     op.execute(
         """
-        CREATE OR REPLACE FUNCTION update_unit_tree_on_upsert() RETURNS TRIGGER AS $$
-            DECLARE
-                ancestors_arr INTEGER[];
-                descendants_arr INTEGER[];
+        CREATE OR REPLACE FUNCTION calculate_ancestors (node_id INT) RETURNS INTEGER[] AS $$
             BEGIN
-                WITH RECURSIVE ancestors(id) AS (
-                    SELECT edge.source_id AS id FROM edge WHERE edge.target_id = NEW.node_id
-                    UNION ALL
-                    SELECT edge.source_id AS id FROM ancestors
-                        JOIN edge ON ancestors.id = edge.target_id
-                    -- WHERE NOT EXISTS (SELECT 1 FROM ancestors WHERE id = e.source_id)
-                    -- Do not specify 'SEARCH' method in case of depth first
-                    -- SEARCH BREADTH FIRST BY id SET ordercol
-                ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                SELECT ARRAY_AGG(DISTINCT id) INTO ancestors_arr FROM ancestors;
-                
-                WITH RECURSIVE descendants(id) AS (
-                    SELECT edge.target_id AS id FROM edge WHERE edge.source_id = NEW.node_id
-                    UNION ALL
-                    SELECT edge.target_id AS id FROM descendants
-                        JOIN edge ON descendants.id = edge.source_id
-                ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
-                SELECT ARRAY_AGG(DISTINCT id) INTO descendants_arr FROM descendants;
-
-                NEW.ancestors := COALESCE(ancestors_arr, ARRAY[]::INTEGER[]);
-                NEW.descendants := COALESCE(descendants_arr, ARRAY[]::INTEGER[]);
-
-                RETURN NEW;
+                RETURN COALESCE(
+                    (
+                        WITH RECURSIVE ancestors(id) AS (
+                            SELECT edge.source_id AS id FROM edge WHERE edge.target_id = node_id
+                            UNION ALL
+                            SELECT edge.source_id AS id FROM ancestors
+                                JOIN edge ON ancestors.id = edge.target_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING path
+                        SELECT ARRAY_AGG(DISTINCT id) FROM ancestors
+                    ),
+                    ARRAY[]::INTEGER[]
+                );
             END;
-        $$ LANGUAGE plpgsql;
+        $$ LANGUAGE plpgsql
         """
     )
 
-    # op.execute(
-    #     """
-    #     CREATE OR REPLACE TRIGGER update_unit_tree_on_upsert
-    #     AFTER INSERT OR UPDATE ON public.unit
-    #     FOR EACH ROW
-    #     EXECUTE FUNCTION update_unit_tree_on_upsert();
-    #     """
-    # )
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION calculate_descendants (node_id INT) RETURNS INTEGER[] AS $$
+            BEGIN
+                RETURN COALESCE(
+                    (
+                        WITH RECURSIVE descendants(id) AS (
+                            SELECT edge.target_id AS id FROM edge WHERE edge.source_id = node_id
+                            UNION ALL
+                            SELECT edge.target_id AS id FROM descendants
+                                JOIN edge ON descendants.id = edge.source_id
+                        ) SEARCH DEPTH FIRST BY id SET order_col CYCLE id SET is_cycle USING PATH
+                        SELECT ARRAY_AGG(DISTINCT id) FROM descendants
+                    ),
+                    ARRAY[]::INTEGER[]
+                );
+            END;
+        $$ LANGUAGE plpgsql
+        """
+    )
 
     op.execute(
         """
@@ -241,8 +239,39 @@ def upgrade() -> None:
     # op.drop_column("unit", "node_id_bkp")
     op.alter_column("unit", "node_id", nullable=False)
 
+    # TODO: review the WHERE conditions
+    op.execute(
+        """
+        CREATE OR REPLACE FUNCTION update_unit_tree_on_edge_delete() RETURNS TRIGGER AS $$
+            BEGIN
+                UPDATE unit
+                SET
+                    ancestors = calculate_ancestors(unit.node_id),
+                    descendants = calculate_descendants(unit.node_id)
+                WHERE OLD.source_id = ANY(unit.ancestors)
+                    OR OLD.source_id = ANY(unit.descendants)
+                    OR OLD.target_id = ANY(unit.ancestors)
+                    OR OLD.target_id = ANY(unit.descendants);
+
+                RETURN OLD;
+            END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
+    op.execute(
+        """
+        CREATE OR REPLACE TRIGGER update_unit_tree_on_edge_delete
+        AFTER DELETE ON public.edge
+        FOR EACH ROW
+        EXECUTE FUNCTION update_unit_tree_on_edge_delete();
+        """
+    )
+
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER IF EXISTS update_unit_tree_on_edge_delete ON public.edge;")
+    op.execute("DROP FUNCTION IF EXISTS update_unit_tree_on_edge_delete;")
     # Backup node to downgrade then upgrade back:
     # op.add_column("unit", sa.Column("node_id_bkp", sa.Integer(), nullable=True))
     # op.execute(
@@ -342,3 +371,6 @@ def downgrade() -> None:
         EXECUTE FUNCTION delete_unit_node();
         """
     )
+
+    op.execute("DROP FUNCTION IF EXISTS calculate_descendants;")
+    op.execute("DROP FUNCTION IF EXISTS calculate_ancestors;")
