@@ -469,11 +469,11 @@ def test_add_units_connected_by_edge():
 
     delete_units_mutation = """
     mutation DeleteUnits {{
-        u1: unit(id: {u1}) {{ id }},
-        u2: unit(id: {u2}) {{ id }},
-        u3: unit(id: {u3}) {{ id }},
-        u4: unit(id: {u4}) {{ id }},
-        u5: unit(id: {u5}) {{ id }}
+        u1: unit {{ deleteUnit(input: {{ id: {u1} }}) {{ id }} }},
+        u2: unit {{ deleteUnit(input: {{ id: {u2} }}) {{ id }} }},
+        u3: unit {{ deleteUnit(input: {{ id: {u3} }}) {{ id }} }},
+        u4: unit {{ deleteUnit(input: {{ id: {u4} }}) {{ id }} }},
+        u5: unit {{ deleteUnit(input: {{ id: {u5} }}) {{ id }} }}
     }}
     """.format(
         u1=unit_ids[0],
@@ -490,3 +490,13 @@ def test_add_units_connected_by_edge():
     assert response.status_code == status.HTTP_200_OK
 
     # TODO: add edge by ID resolverrs, check the edges are gone
+    get_edges_query = "query MyQuery { edges { sourceUnitId, targetUnitId } }"
+    response = client.post(url="/v1/graphql", json={"query": get_edges_query})
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    edges = [
+        edge
+        for edge in data["edges"]
+        if (edge["sourceUnitId"] in unit_ids or edge["targetUnitId"] in unit_ids)
+    ]

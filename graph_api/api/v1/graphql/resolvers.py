@@ -55,11 +55,19 @@ async def update_unit(input: UpdateUnitInput) -> Unit:
 
 
 async def delete_unit(id: int) -> Unit:
+    # TODO: add comment and/or change resolver name
     session = get_sync_session()
-    sql = delete(graph.Unit).where(graph.Unit.id == id).returning(graph.Unit)
-    db_units = session.execute(sql).scalars().unique().all()
+    unit_sql = select(graph.Unit).where(graph.Unit.id == id)
+    db_unit = session.execute(unit_sql).scalars().unique().all()
+    if not db_unit:
+        raise ValueError(f"Unit with id {id} not found.")
+    unit = Unit(**db_unit[0].as_dict())
+
+    delete_sql = delete(graph.Node).where(graph.Node.id == unit.node_id)
+    session.execute(delete_sql)
     session.commit()
-    return Unit(**db_units[0].as_dict())
+
+    return unit
 
 
 async def get_edges() -> list[Edge]:
@@ -78,17 +86,6 @@ async def get_edges() -> list[Edge]:
 
 async def add_edge(input: AddEdgeInput) -> Edge:
     session = get_sync_session()
-    # sql = select(graph.Unit).where()
-    # query_target_id = session.query(graph.Unit.node_id).where(
-    #     graph.Unit.id == input.target_unit_id
-    # )
-    # target_id = query_target_id().all()[0]
-
-    # query_source_id = session.query(graph.Unit.node_id).where(
-    #     graph.Unit.id == input.source_unit_id
-    # )
-    # source_id = query_source_id().all()[0]
-
     sql = select(graph.Unit.id, graph.Unit.node_id).where(
         graph.Unit.id.in_([input.source_unit_id, input.target_unit_id])
     )
@@ -101,7 +98,6 @@ async def add_edge(input: AddEdgeInput) -> Edge:
     )
     session.add(edge)
     session.commit()
-    # session.flush()
     return Edge(
         id=edge.id,
         source_unit_id=input.source_unit_id,

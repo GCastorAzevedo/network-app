@@ -83,7 +83,13 @@ class Unit(EntityBase):
     ancestors = Column(ARRAY(Integer), nullable=False, default=list, index=True)
     descendants = Column(ARRAY(Integer), nullable=False, default=list, index=True)
 
-    node = relationship("Node", back_populates="units")
+    # TODO: regenerate alembic
+    node = relationship(
+        "Node",
+        back_populates="units",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
     # TODO: deprecate
     documents = relationship(
@@ -202,6 +208,7 @@ update_unit_tree_on_upsert_function = DDL(
 )
 
 
+# TODO: delete this trigger
 update_unit_tree_on_upsert_trigger = DDL(
     """
     CREATE OR REPLACE TRIGGER update_unit_tree_on_upsert
@@ -284,3 +291,7 @@ event.listen(
     "after_create",
     update_unit_tree_on_edge_upsert_trigger.execute_if(dialect="postgresql"),
 )
+
+# ============================================================================
+# TRIGGER: Update unit ancestors/descendants when unit is upserted
+# ============================================================================
