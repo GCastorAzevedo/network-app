@@ -8,14 +8,20 @@ from graph_api.api.v1.graphql.resolvers import (
     get_document_by_id,
     get_edges_by_unit_id,
 )
-
+from graph_api.api.v1.graphql.auth import IsAuthenticated
 
 # TODO: introduce higher-level classes unit, document, edge
+# @strawberry.type
+# class Query:
+#     user: str = strawberry.field(permission_classes=[IsAuthenticated])
+
+
 @strawberry.type
 class Query:
-    @strawberry.field
+    @strawberry.field(permission_classes=[IsAuthenticated])
     async def unit(self, id: int) -> Unit:
-        return await get_unit_by_id(id)
+        nodes = IsAuthenticated.get_nodes()
+        return await get_unit_by_id(id, nodes)
 
     @strawberry.field
     async def units(self) -> list[Unit]:

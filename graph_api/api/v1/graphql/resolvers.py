@@ -1,6 +1,7 @@
 from graph_db.models import graph
 from graph_db.session import get_sync_session, get_async_session
-from sqlalchemy import select, delete, update, insert
+from sqlalchemy import select, delete, update, insert, text
+from sqlalchemy.orm.session import Session
 from graph_api.api.v1.graphql.types import Document, Edge, Unit
 from graph_api.api.v1.graphql.models import (
     AddDocumentInput,
@@ -10,10 +11,18 @@ from graph_api.api.v1.graphql.models import (
     UpdateUnitInput,
 )
 from typing import Sequence
+import strawberry
 
 
-async def get_units() -> list[Unit]:
+def set_user_context(session: Session, user_id: str | None):
+    if user_id:
+        session.execute(text(f"SET app.current_user_id = '{user_id}'"))
+
+
+async def get_units(info: strawberry.types.Info) -> list[Unit]:
     session = get_sync_session()
+    user_id = info.context.get("user_id")
+    set_user_context(session, user_id)
     sql = select(graph.Unit).order_by(graph.Unit.name)
     db_units = session.execute(sql).scalars().unique().all()
     return [Unit(**unit.as_dict()) for unit in db_units]

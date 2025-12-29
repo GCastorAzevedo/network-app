@@ -168,6 +168,17 @@ class Edge(Base):
         }
 
 
+class User(Base):
+    __tablename__ = "user"
+    __table_args__ = (
+        {
+            "schema": "public",
+        },
+    )
+    name = Column(String, nullable=False, unique=True)
+    nodes = Column(ARRAY(Integer), nullable=False, default=list, index=True)
+
+
 # ============================================================================
 # TRIGGER: Update unit ancestors/descendants when unit is upserted
 # ============================================================================
