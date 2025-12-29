@@ -124,6 +124,7 @@ class Auth0provider(IdentityProvider):
                 id=user_id,
                 name=auth0_user.get("nickname", auth0_user.get("email")),
                 email=auth0_user.get("email"),
+                nodes=auth0_user.get("app_metadata", {}).get("nodes", []),
                 full_name=auth0_user.get("name"),
                 disabled=auth0_user.get("blocked", False),
             )
@@ -183,6 +184,9 @@ async def get_current_user(
     if username is None:
         raise InvalidCredentials(headers)
 
+    # TODO: add custom claim to JWT token with nodes
+    # context.accessToken['https://your-app.com/nodes'] = user.app_metadata.nodes || [];
+    # nodes = payload.get('https://your-app.com/nodes', [])
     # token_scopes = payload.get("scopes", [])
     token_scopes = payload.get("scope", "").split()
     token_data = TokenData(username=username, scopes=token_scopes)
