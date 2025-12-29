@@ -10,6 +10,7 @@ from graph_api.api.v1.graphql.resolvers import (
 )
 
 
+# TODO: introduce higher-level classes unit, document, edge
 @strawberry.type
 class Query:
     @strawberry.field

@@ -16,6 +16,7 @@ passlib = "*"
 pyjwt = "*"
 pwdlib = {extras = ["argon2"], version = "*"}
 strawberry-graphql = {extras = ["cli"], version = "*"}
+asyncpg = "*"
 
 [dev-packages]
 black = "*"

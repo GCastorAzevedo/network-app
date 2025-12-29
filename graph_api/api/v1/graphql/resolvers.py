@@ -85,13 +85,14 @@ def _parse_edges_from_db(db_edges: Sequence[graph.Edge]) -> list[Edge]:
 async def _get_edges(
     target_id: int | None = None, source_id: int | None = None
 ) -> Sequence[graph.Edge]:
-    session = get_sync_session()
-    sql = select(graph.Edge).order_by(graph.Edge.source_id, graph.Edge.target_id)
-    if target_id is not None:
-        sql = sql.where(graph.Edge.target_id == target_id)
-    if source_id is not None:
-        sql = sql.where(graph.Edge.source_id == source_id)
-    return session.execute(sql).scalars().unique().all()
+    async with get_async_session() as session:
+        sql = select(graph.Edge).order_by(graph.Edge.source_id, graph.Edge.target_id)
+        if target_id is not None:
+            sql = sql.where(graph.Edge.target_id == target_id)
+        if source_id is not None:
+            sql = sql.where(graph.Edge.source_id == source_id)
+        result = await session.execute(sql)
+        return result.scalars().unique().all()
 
 
 async def get_all_edges() -> list[Edge]:
@@ -103,17 +104,6 @@ async def get_edges_by_unit_id(
     target_id=int | None, source_id=int | None
 ) -> list[Edge]:
     db_edges = await _get_edges(target_id=target_id, source_id=source_id)
-    return _parse_edges_from_db(db_edges)
-
-
-async def get_edges_by_source_id(source_id=int) -> list[Edge]:
-    session = get_sync_session()
-    sql = (
-        select(graph.Edge)
-        .where(graph.Edge.target_id == source_id)
-        .order_by(graph.Edge.source_id, graph.Edge.target_id)
-    )
-    db_edges = session.execute(sql).scalars().all()
     return _parse_edges_from_db(db_edges)
 
 

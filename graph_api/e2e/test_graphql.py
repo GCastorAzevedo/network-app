@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from fastapi import status
-from time import time
+from time import sleep
 from graph_api.main import app
 
 client = TestClient(
@@ -422,7 +422,7 @@ def test_add_units_connected_by_edge():
         "e5": {"addEdge": {"sourceUnitId": unit_ids[4], "targetUnitId": unit_ids[1]}},
     }
 
-    time(0.1)
+    sleep(0.1)
 
     get_units_query = """
     query MyQuery {{
@@ -492,7 +492,6 @@ def test_add_units_connected_by_edge():
     )
     assert response.status_code == status.HTTP_200_OK
 
-    # TODO: add edge by ID resolvers, check the edges are gone
     get_edges_query = "query MyQuery { edges { sourceUnitId, targetUnitId } }"
     response = client.post(url="/v1/graphql", json={"query": get_edges_query})
     assert response.status_code == status.HTTP_200_OK
@@ -504,3 +503,25 @@ def test_add_units_connected_by_edge():
         if (edge["sourceUnitId"] in unit_ids or edge["targetUnitId"] in unit_ids)
     ]
     assert len(edges) == 0
+
+    # TODO: review this test, add a further test before deleting edges.
+    get_edges_query = """
+    query MyQuery {{
+        e1: edgesByUnitId(sourceId: {u1}, targetId: {u2}) {{ id }},
+        e2: edgesByUnitId(sourceId: {u2}, targetId: {u3}) {{ id }},
+        e3: edgesByUnitId(sourceId: {u3}, targetId: {u4}) {{ id }},
+        e4: edgesByUnitId(sourceId: {u4}, targetId: {u2}) {{ id }},
+        e5: edgesByUnitId(sourceId: {u5}, targetId: {u2}) {{ id }}
+    }}
+    """.format(
+        u1=unit_ids[0],
+        u2=unit_ids[1],
+        u3=unit_ids[2],
+        u4=unit_ids[3],
+        u5=unit_ids[4],
+    )
+    response = client.post(url="/v1/graphql", json={"query": get_edges_query})
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()["data"]
+    assert data is None
