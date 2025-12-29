@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from fastapi import status
+from time import time
 from graph_api.main import app
 
 client = TestClient(
@@ -421,6 +422,8 @@ def test_add_units_connected_by_edge():
         "e5": {"addEdge": {"sourceUnitId": unit_ids[4], "targetUnitId": unit_ids[1]}},
     }
 
+    time(0.1)
+
     get_units_query = """
     query MyQuery {{
         u1: unit(id: {u1}) {{
@@ -489,7 +492,7 @@ def test_add_units_connected_by_edge():
     )
     assert response.status_code == status.HTTP_200_OK
 
-    # TODO: add edge by ID resolverrs, check the edges are gone
+    # TODO: add edge by ID resolvers, check the edges are gone
     get_edges_query = "query MyQuery { edges { sourceUnitId, targetUnitId } }"
     response = client.post(url="/v1/graphql", json={"query": get_edges_query})
     assert response.status_code == status.HTTP_200_OK
@@ -500,3 +503,4 @@ def test_add_units_connected_by_edge():
         for edge in data["edges"]
         if (edge["sourceUnitId"] in unit_ids or edge["targetUnitId"] in unit_ids)
     ]
+    assert len(edges) == 0

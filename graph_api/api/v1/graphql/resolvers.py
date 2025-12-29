@@ -1,5 +1,5 @@
 from graph_db.models import graph
-from graph_db.session import get_sync_session
+from graph_db.session import get_sync_session, get_async_session
 from sqlalchemy import select, delete, update, insert
 from graph_api.api.v1.graphql.types import Document, Edge, Unit
 from graph_api.api.v1.graphql.models import (
@@ -9,6 +9,7 @@ from graph_api.api.v1.graphql.models import (
     AddEdgeInput,
     UpdateUnitInput,
 )
+from typing import Sequence
 
 
 async def get_units() -> list[Unit]:
@@ -70,10 +71,7 @@ async def delete_unit(id: int) -> Unit:
     return unit
 
 
-async def get_edges() -> list[Edge]:
-    session = get_sync_session()
-    sql = select(graph.Edge).order_by(graph.Edge.source_id, graph.Edge.target_id)
-    db_edges = session.execute(sql).scalars().unique().all()
+def _parse_edges_from_db(db_edges: Sequence[graph.Edge]) -> list[Edge]:
     return [
         Edge(
             id=edge.id,
@@ -82,6 +80,41 @@ async def get_edges() -> list[Edge]:
         )
         for edge in db_edges
     ]
+
+
+async def _get_edges(
+    target_id: int | None = None, source_id: int | None = None
+) -> Sequence[graph.Edge]:
+    session = get_sync_session()
+    sql = select(graph.Edge).order_by(graph.Edge.source_id, graph.Edge.target_id)
+    if target_id is not None:
+        sql = sql.where(graph.Edge.target_id == target_id)
+    if source_id is not None:
+        sql = sql.where(graph.Edge.source_id == source_id)
+    return session.execute(sql).scalars().unique().all()
+
+
+async def get_all_edges() -> list[Edge]:
+    db_edges = await _get_edges()
+    return _parse_edges_from_db(db_edges)
+
+
+async def get_edges_by_unit_id(
+    target_id=int | None, source_id=int | None
+) -> list[Edge]:
+    db_edges = await _get_edges(target_id=target_id, source_id=source_id)
+    return _parse_edges_from_db(db_edges)
+
+
+async def get_edges_by_source_id(source_id=int) -> list[Edge]:
+    session = get_sync_session()
+    sql = (
+        select(graph.Edge)
+        .where(graph.Edge.target_id == source_id)
+        .order_by(graph.Edge.source_id, graph.Edge.target_id)
+    )
+    db_edges = session.execute(sql).scalars().all()
+    return _parse_edges_from_db(db_edges)
 
 
 async def add_edge(input: AddEdgeInput) -> Edge:
@@ -98,11 +131,7 @@ async def add_edge(input: AddEdgeInput) -> Edge:
     )
     session.add(edge)
     session.commit()
-    return Edge(
-        id=edge.id,
-        source_unit_id=input.source_unit_id,
-        target_unit_id=input.target_unit_id,
-    )
+    return _parse_edges_from_db([edge])[0]
 
 
 async def delete_edge(id: int) -> Edge:
