@@ -53,6 +53,7 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - app-db-data:/var/lib/postgresql/data
+      - ./scripts/healthcheck.sh:/scripts/healthcheck.sh
     healthcheck:
       test: ["CMD-SHELL", "/scripts/healthcheck.sh"]
       interval: 1s

@@ -20,22 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(
-        """ 
-        ALTER TABLE public.unit ENABLE ROW LEVEL SECURITY;
-        """
-    )
-
-    op.execute(
-        """
-        CREATE POLICY node_access ON public.unit
-        FOR SELECT
-        USING(
-            ancestors && (SELECT nodes FROM app_users WHERE user_id = current_setting('app.current_user_id'))
-        );
-        """
-    )
-
     op.create_table(
         "user",
         sa.Column("name", sa.String(), nullable=False),
@@ -59,6 +43,24 @@ def upgrade() -> None:
     )
     op.create_index(
         op.f("ix_public_user_nodes"), "user", ["nodes"], unique=False, schema="public"
+    )
+    op.execute(
+        """
+        ALTER TABLE public.unit ENABLE ROW LEVEL SECURITY;
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY node_access ON public.unit
+        FOR SELECT
+        USING (
+            ancestors && (
+                SELECT nodes
+                FROM public."user"
+                WHERE id = current_setting('app.current_user_id')::integer
+            )
+        );
+        """
     )
 
 
