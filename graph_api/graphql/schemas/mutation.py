@@ -1,6 +1,6 @@
 import strawberry
 import json
-from graph_api.api.v1.graphql.resolvers import (
+from graph_api.graphql.resolvers import (
     add_unit,
     update_unit,
     delete_unit,
@@ -10,8 +10,8 @@ from graph_api.api.v1.graphql.resolvers import (
     add_edge,
     delete_edge,
 )
-from graph_api.api.v1.graphql.types import Unit, Document, Edge, JSON
-from graph_api.api.v1.graphql.models import (
+from graph_api.graphql.types import Unit, Document, Edge, JSON
+from graph_api.graphql.models import (
     AddDocumentInput,
     UpdateDocumentInput,
     AddUnitInput,

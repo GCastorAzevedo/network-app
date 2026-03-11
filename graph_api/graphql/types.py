@@ -14,8 +14,8 @@ JSON = strawberry.scalar(
 class Unit:
     id: int
     node_id: int
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     ancestors: list[int] = strawberry.field(default_factory=list)
     descendants: list[int] = strawberry.field(default_factory=list)
 
@@ -31,6 +31,6 @@ class Edge:
 class Document:
     id: int
     unit_id: int
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     content: JSON

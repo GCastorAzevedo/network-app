@@ -6,26 +6,26 @@ from pydantic import BaseModel
 class AddDocumentInput(BaseModel):
     unit_id: int
     name: str
-    description: Optional[str] = None
-    content: Optional[dict] = None
+    description: str | None = None
+    content: dict | None = None
 
 
 class UpdateDocumentInput(BaseModel):
     id: int
-    name: Optional[str] = None
-    description: Optional[str] = None
-    content: Optional[dict] = None
+    name: str | None = None
+    description: str | None = None
+    content: dict | None = None
 
 
 class AddUnitInput(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 class UpdateUnitInput(BaseModel):
     id: int
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 class AddEdgeInput(BaseModel):

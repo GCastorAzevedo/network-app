@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from graph_api.api.v1.api import route as api_v1_route
+from graph_api.api import route as api_v1_route
 
 app = FastAPI(
     title="Network App API",

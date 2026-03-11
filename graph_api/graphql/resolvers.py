@@ -2,8 +2,8 @@ from graph_db.models import graph
 from graph_db.session import get_sync_session, get_async_session
 from sqlalchemy import select, delete, update, insert, text
 from sqlalchemy.orm.session import Session
-from graph_api.api.v1.graphql.types import Document, Edge, Unit
-from graph_api.api.v1.graphql.models import (
+from graph_api.graphql.types import Document, Edge, Unit
+from graph_api.graphql.models import (
     AddDocumentInput,
     UpdateDocumentInput,
     AddUnitInput,

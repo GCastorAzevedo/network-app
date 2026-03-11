@@ -1,6 +1,6 @@
 import strawberry
-from graph_api.api.v1.graphql.types import Document, Edge, Unit
-from graph_api.api.v1.graphql.resolvers import (
+from graph_api.graphql.types import Document, Edge, Unit
+from graph_api.graphql.resolvers import (
     get_units,
     get_documents,
     get_all_edges,
@@ -8,7 +8,7 @@ from graph_api.api.v1.graphql.resolvers import (
     get_document_by_id,
     get_edges_by_unit_id,
 )
-from graph_api.api.v1.graphql.auth import IsAuthenticated
+from graph_api.graphql.auth import IsAuthenticated
 
 # TODO: introduce higher-level classes unit, document, edge
 # @strawberry.type
